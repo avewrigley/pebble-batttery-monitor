@@ -1,0 +1,22 @@
+{
+    "uuid": "89a78501-50bb-4bad-944f-31040ddde22e",
+    "shortName": "battery-monitor",
+    "longName": "battery-monitor",
+    "companyName": "Ave Wrigley",
+    "versionCode": 4,
+    "versionLabel": "1.0.0",
+    "watchapp": {
+        "watchface": true
+    },
+    "appKeys": {
+        "lat": 0,
+        "lon": 1,
+        "temp": 2,
+        "city": 3,
+        "description": 4
+    },    
+    "capabilities": [ "location" ],
+    "resources": {
+        "media": []
+    }
+}
