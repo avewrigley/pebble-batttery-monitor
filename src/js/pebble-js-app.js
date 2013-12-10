@@ -1,10 +1,11 @@
 
-var url_root = "http://api.openweathermap.org/data/2.5/forecast?units=imperial&cnt=1&mode=json";
+var url_root = "http://api.openweathermap.org/data/2.5/forecast?cnt=1&mode=json";
 function fetchWeather( latitude, longitude ) 
 {
     var response;
     var req = new XMLHttpRequest();
-    var url = url_root + "&lat=" + latitude + "&lon=" + longitude;
+    var temp_units = localStorage.getItem( "temp_units" ) || "metric";
+    var url = url_root + "&lat=" + latitude + "&lon=" + longitude + "&units=" + temp_units;
     console.log( "GET " + url );
     req.open( 'GET', url, true );
     req.onload = function(e) {
@@ -12,7 +13,7 @@ function fetchWeather( latitude, longitude )
         {
             if ( req.status == 200 ) 
             {
-                console.log( req.responseText );
+                // console.log( req.responseText );
                 response = JSON.parse(req.responseText);
                 if ( response && response.list && response.list.length > 0 ) 
                 {
@@ -24,9 +25,11 @@ function fetchWeather( latitude, longitude )
                     console.log( "city: " + city );
                     console.log( "temp: " + temp );
                     console.log( "desc: " + description );
+                    console.log( "temp_units: " + temp_units );
                     var transactionId = Pebble.sendAppMessage(
                         {
                             "temp": "" + temp,
+                            "temp_units": "" + temp_units,
                             "city": "" + city,
                             "description": "" + description,
                         },
@@ -96,11 +99,30 @@ Pebble.addEventListener(
 );
 
 Pebble.addEventListener(
+    "showConfiguration",
+    function(e) 
+    {
+        console.log( "showConfiguration" );
+        var temp_units = localStorage.getItem( "temp_units" ) || "metric";
+        var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?temp_units=" + temp_units;
+        // var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html";
+        console.log( "GET: " + url );
+        Pebble.openURL( url );
+    }
+);
+
+Pebble.addEventListener(
     "webviewclosed",
     function( e ) 
     {
         console.log( "webview closed" );
+        var options = JSON.parse( decodeURIComponent( e.response ) );
+        for ( k in options )
+        {
+            console.log( "SET: " + k + " = " + options[k] );
+            localStorage.setItem( k, options[k] );
+            locationCallback();
+        }
     }
 );
-
 

@@ -22,6 +22,7 @@ enum GeoKey {
     TEMP = 0x2,
     CITY = 0x3,
     DESCRIPTION = 0x4,
+    TEMP_UNITS = 0x5,
 };
 
 void out_sent_handler( DictionaryIterator *sent, void *context ) 
@@ -67,6 +68,7 @@ void in_received_handler( DictionaryIterator *iter, void *context )
 
     Tuple *desc_t = dict_find( iter, DESCRIPTION );
     Tuple *temp_t = dict_find( iter, TEMP );
+    Tuple *temp_units_t = dict_find( iter, TEMP_UNITS );
     if ( temp_t && desc_t )
     {
         static char weather_text[] = "                                       ";
@@ -78,7 +80,16 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         APP_LOG( APP_LOG_LEVEL_DEBUG, "temp" );
         APP_LOG( APP_LOG_LEVEL_DEBUG, temp_t->value->cstring );
         strcat( weather_text, temp_t->value->cstring );
-        strcat( weather_text, "°F" );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "temp_units" );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, temp_units_t->value->cstring );
+        if ( strcmp( temp_units_t->value->cstring, "metric" ) == 0 )
+        {
+            strcat( weather_text, "°C" );
+        }
+        else
+        {
+            strcat( weather_text, "°F" );
+        }
         text_layer_set_text( weather_layer, weather_text );
     }
 }
