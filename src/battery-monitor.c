@@ -239,6 +239,19 @@ static void window_unload( Window *window )
     text_layer_destroy( battery_layer );
 }
 
+static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "click" );
+}
+
+static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "long click" );
+}
+
+static void click_config_provider(void *context) {
+    window_single_click_subscribe( BUTTON_ID_SELECT, select_click_handler );
+    window_long_click_subscribe( BUTTON_ID_SELECT, 0, select_long_click_handler, NULL );
+}
+
 // Handle the start-up of the app
 static void do_init( void ) 
 {
@@ -253,6 +266,7 @@ static void do_init( void )
             .unload = window_unload
         }
     );
+    window_set_click_config_provider( window, click_config_provider );
     window_stack_push( window, true );
 
 }

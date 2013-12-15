@@ -117,6 +117,7 @@ Pebble.addEventListener(
     {
         console.log( "webview closed" );
         var options = JSON.parse( decodeURIComponent( e.response ) );
+        console.log( options );
         for ( k in options )
         {
             console.log( "SET: " + k + " = " + options[k] );
