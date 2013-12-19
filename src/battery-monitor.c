@@ -16,6 +16,9 @@ TextLayer *connection_layer;
 const uint32_t inbound_size = 64;
 const uint32_t outbound_size = 64;
 
+#define BATTERY_LEVEL 1
+static int battery_level = 100;
+
 enum GeoKey {
     LAT = 0x0,
     LON = 0x1,
@@ -112,10 +115,12 @@ static void handle_battery( BatteryChargeState charge_state )
     else 
     {
         snprintf( battery_text, sizeof( battery_text ), "battery: %d%%", charge_state.charge_percent );
-        if ( charge_state.charge_percent < 60 )
+        battery_level = persist_exists( BATTERY_LEVEL ) ? persist_read_int( BATTERY_LEVEL ) : 100;
+        if ( battery_level >= 60 && charge_state.charge_percent < 60 )
         {
             APP_LOG( APP_LOG_LEVEL_DEBUG, "battery low" );
             vibes_short_pulse();
+            persist_write_int( BATTERY_LEVEL, charge_state.charge_percent );
         }
     }
     text_layer_set_text( battery_layer, battery_text );
