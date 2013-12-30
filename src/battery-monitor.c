@@ -5,6 +5,9 @@
 // App-specific data
 Window *window; // All apps must have at least one window
 
+Layer *root_layer;
+GRect frame;
+
 TextLayer *time_layer; 
 TextLayer *secs_layer; 
 TextLayer *geo_layer; 
@@ -12,6 +15,7 @@ TextLayer *weather_layer;
 TextLayer *date_layer; 
 TextLayer *battery_layer;
 TextLayer *connection_layer;
+TextLayer *notify_layer; 
 
 const uint32_t inbound_size = 64;
 const uint32_t outbound_size = 64;
@@ -28,6 +32,21 @@ enum GeoKey {
     TEMP_UNITS = 0x5,
 };
 
+static AppTimer *timer;
+
+static void notify_timer_callback( void *data ) {
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "notify_timer_callback" );
+    layer_set_hidden( text_layer_get_layer( notify_layer ), true );
+}
+
+static void notify( char *text )
+{
+    APP_LOG( APP_LOG_LEVEL_DEBUG, text );
+    layer_set_hidden( text_layer_get_layer( notify_layer ), false );
+    text_layer_set_text( notify_layer, text );
+    timer = app_timer_register( 5000 /* milliseconds */, notify_timer_callback, NULL );
+}
+
 void out_sent_handler( DictionaryIterator *sent, void *context ) 
 {
 }
@@ -40,6 +59,7 @@ void out_failed_handler( DictionaryIterator *failed, AppMessageResult reason, vo
 
 void in_received_handler( DictionaryIterator *iter, void *context ) 
 {
+    notify( "get weather" );
     Tuple *lon_t = dict_find( iter, LON );
     Tuple *lat_t = dict_find( iter, LAT );
     if ( lon_t && lat_t )
@@ -148,15 +168,15 @@ static void handle_bluetooth( bool connected )
     {
         APP_LOG( APP_LOG_LEVEL_DEBUG, "disconnected" );
         vibes_short_pulse();
+        notify( "bluetooth diconnected" );
     }
 }
 
 static void window_load( Window *window ) 
 {
     APP_LOG( APP_LOG_LEVEL_DEBUG, "window_load" );
-    Layer *root_layer;
     root_layer = window_get_root_layer( window );
-    GRect frame = layer_get_frame( root_layer );
+    frame = layer_get_frame( root_layer );
 
     time_layer = text_layer_create( GRect( 0, 0, frame.size.w /* width */, 50/* height */ ) );
     text_layer_set_text_color( time_layer, GColorWhite );
@@ -164,6 +184,15 @@ static void window_load( Window *window )
     text_layer_set_font( time_layer, fonts_get_system_font( FONT_KEY_ROBOTO_BOLD_SUBSET_49 ) );
     text_layer_set_text_alignment( time_layer, GTextAlignmentLeft );
     text_layer_set_text( time_layer, "00:00" );
+
+    notify_layer = text_layer_create( GRect( 5, 50, frame.size.w-35 /* width */, 80/* height */ ) );
+    text_layer_set_text_color( notify_layer, GColorBlack );
+    text_layer_set_background_color( notify_layer, GColorWhite );
+    text_layer_set_font( notify_layer, fonts_get_system_font( FONT_KEY_GOTHIC_24_BOLD ) );
+    text_layer_set_text_alignment( notify_layer, GTextAlignmentCenter );
+    layer_set_hidden( text_layer_get_layer( notify_layer ), true );
+
+    text_layer_set_overflow_mode( notify_layer, GTextOverflowModeWordWrap );
 
     date_layer = text_layer_create( GRect( 0, 60, frame.size.w /* width */, 30/* height */ ) );
     text_layer_set_text_color( date_layer, GColorWhite );
@@ -214,6 +243,7 @@ static void window_load( Window *window )
     layer_add_child( root_layer, text_layer_get_layer( weather_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( connection_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( battery_layer ) );
+    layer_add_child( root_layer, text_layer_get_layer( notify_layer ) );
 
     tick_timer_service_subscribe( SECOND_UNIT, &handle_second_tick );
     handle_battery( battery_state_service_peek() );
