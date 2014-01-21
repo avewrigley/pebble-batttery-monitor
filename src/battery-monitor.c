@@ -130,7 +130,7 @@ static void handle_battery( BatteryChargeState charge_state )
     if ( charge_state.is_charging )
     {
         APP_LOG( APP_LOG_LEVEL_DEBUG, "charging" );
-        snprintf( battery_text, sizeof( battery_text ), "battery: %d%% charging", charge_state.charge_percent );
+        snprintf( battery_text, sizeof( battery_text ), "charging: %d%%", charge_state.charge_percent );
     }
     else 
     {
