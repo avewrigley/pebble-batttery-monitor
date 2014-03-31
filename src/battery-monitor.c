@@ -22,6 +22,7 @@ const uint32_t outbound_size = 64;
 
 #define BATTERY_LEVEL 1
 static int battery_level = 100;
+static char clock_format[] = "12h";
 
 enum GeoKey {
     LAT = 0x0,
@@ -77,6 +78,13 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         APP_LOG( APP_LOG_LEVEL_DEBUG, geo_text );
         text_layer_set_text( geo_layer, geo_text );
     }
+    Tuple *clock_format_t = dict_find( iter, CLOCK_FORMAT );
+    if ( clock_format_t )
+    {
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "clock_format" );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, clock_format_t->value->cstring );
+        strcpy( clock_format, clock_format_t->value->cstring );
+    }
 
     Tuple *city = dict_find( iter, CITY );
     if ( city )
@@ -93,7 +101,6 @@ void in_received_handler( DictionaryIterator *iter, void *context )
     Tuple *desc_t = dict_find( iter, DESCRIPTION );
     Tuple *temp_t = dict_find( iter, TEMP );
     Tuple *temp_units_t = dict_find( iter, TEMP_UNITS );
-    Tuple *clock_format_t = dict_find( iter, CLOCK_FORMAT );
     if ( temp_t && desc_t )
     {
         static char weather_text[] = "                                       ";
@@ -115,8 +122,6 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         {
             strcat( weather_text, "°F" );
         }
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "clock_format" );
-        APP_LOG( APP_LOG_LEVEL_DEBUG, clock_format_t->value->cstring );
         text_layer_set_text( weather_layer, weather_text );
     }
 }

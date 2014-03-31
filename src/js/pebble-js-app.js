@@ -5,7 +5,6 @@ function fetchWeather( latitude, longitude )
     var response;
     var req = new XMLHttpRequest();
     var temp_units = localStorage.getItem( "temp_units" ) || "metric";
-    var clock_format = localStorage.getItem( "clock_format" ) || "12h";
     var url = url_root + "&lat=" + latitude + "&lon=" + longitude + "&units=" + temp_units;
     console.log( "GET " + url );
     req.open( 'GET', url, true );
@@ -27,12 +26,10 @@ function fetchWeather( latitude, longitude )
                     console.log( "temp: " + temp );
                     console.log( "desc: " + description );
                     console.log( "temp_units: " + temp_units );
-                    console.log( "clock_format: " + clock_format );
                     var transactionId = Pebble.sendAppMessage(
                         {
                             "temp": "" + temp,
                             "temp_units": "" + temp_units,
-                            "clock_format": "" + clock_format,
                             "city": "" + city,
                             "description": "" + description,
                         },
@@ -63,10 +60,13 @@ function locationSuccess( pos )
     console.log( "latitude: " + lat );
     console.log( "longitude: " + lon );
     console.log( "version 6" );
+    var clock_format = localStorage.getItem( "clock_format" ) || "12h";
+    console.log( "clock_format: " + clock_format );
     var transactionId = Pebble.sendAppMessage(
         {
             "lat": lat,
             "lon": lon,
+            "clock_format": "" + clock_format,
         },
         function( e ) {
             console.log( "Successfully delivered location message with transactionId=" + e.data.transactionId );
@@ -95,7 +95,6 @@ Pebble.addEventListener(
     function(e) 
     {
         console.log( "ready: " + e.ready );
-        // locationWatcher = window.navigator.geolocation.watchPosition( locationSuccess, locationError, locationOptions );
         locationCallback();
         window.setInterval( locationCallback, 60 * 60 * 1000 );
     }
@@ -109,7 +108,6 @@ Pebble.addEventListener(
         var temp_units = localStorage.getItem( "temp_units" ) || "metric";
         var clock_format = localStorage.getItem( "clock_format" ) || "12h";
         var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?temp_units=" + temp_units + "&clock_format=" + clock_format;
-        // var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html";
         console.log( "GET: " + url );
         Pebble.openURL( url );
     }
@@ -130,4 +128,3 @@ Pebble.addEventListener(
         }
     }
 );
-
