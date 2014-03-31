@@ -1,42 +1,8 @@
 
 var icons = {
-    
-    "01d": 0,
-    
-    "02d": 1,
-    
-    "03d": 2,
-    
-    "04d": 3,
-    
-    "09d": 4,
-    
-    "10d": 5,
-    
-    "11d": 6,
-    
-    "13d": 7,
-    
-    "50d": 8,
-    
-    "01n": 9,
-    
-    "02n": 10,
-    
-    "03n": 11,
-    
-    "04n": 12,
-    
-    "09n": 13,
-    
-    "10n": 14,
-    
-    "11n": 15,
-    
-    "13n": 16,
-    
-    "50n": 17
-    
+    [% FOREACH image IN images %]
+    "[% image.name %]": [% loop.index %][% UNLESS loop.last %],[% END %]
+    [% END %]
 };
 
 // var url_root = "http://api.openweathermap.org/data/2.5/forecast?cnt=1&mode=json";

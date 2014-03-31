@@ -3,8 +3,8 @@
     "shortName": "battery-monitor",
     "longName": "battery-monitor",
     "companyName": "Ave Wrigley",
-    "versionCode": 14,
-    "versionLabel": "1.0.14",
+    "versionCode": 17,
+    "versionLabel": "1.0.17",
     "watchapp": {
         "watchface": true
     },
@@ -15,10 +15,121 @@
         "city": 3,
         "description": 4,
         "temp_units": 5,
-        "clock_format": 6
+        "clock_format": 6,
+        "icon": 7
     },    
     "capabilities": [ "location", "configurable" ],
     "resources": {
-        "media": []
+        "media": [
+        
+            {
+                "type": "png",
+                "name": "01d",
+                "file": "img/01d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "02d",
+                "file": "img/02d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "03d",
+                "file": "img/03d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "04d",
+                "file": "img/04d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "09d",
+                "file": "img/09d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "10d",
+                "file": "img/10d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "11d",
+                "file": "img/11d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "13d",
+                "file": "img/13d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "50d",
+                "file": "img/50d.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "01n",
+                "file": "img/01n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "02n",
+                "file": "img/02n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "03n",
+                "file": "img/03n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "04n",
+                "file": "img/04n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "09n",
+                "file": "img/09n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "10n",
+                "file": "img/10n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "11n",
+                "file": "img/11n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "13n",
+                "file": "img/13n.png"
+            },
+        
+            {
+                "type": "png",
+                "name": "50n",
+                "file": "img/50n.png"
+            }
+        
+        ]
     }
 }

@@ -29,25 +29,8 @@ static int battery_level = 100;
 static char clock_format[] = "12h";
 
 static uint32_t WEATHER_ICONS[] = {
-
-    RESOURCE_ID_01d,
-    RESOURCE_ID_02d,
-    RESOURCE_ID_03d,
-    RESOURCE_ID_04d,
-    RESOURCE_ID_09d,
-    RESOURCE_ID_10d,
-    RESOURCE_ID_11d,
-    RESOURCE_ID_13d,
-    RESOURCE_ID_50d,
-    RESOURCE_ID_01n,
-    RESOURCE_ID_02n,
-    RESOURCE_ID_03n,
-    RESOURCE_ID_04n,
-    RESOURCE_ID_09n,
-    RESOURCE_ID_10n,
-    RESOURCE_ID_11n,
-    RESOURCE_ID_13n,
-    RESOURCE_ID_50n
+[% FOREACH image IN images %]
+    RESOURCE_ID_[% image.name %][% UNLESS loop.last %],[% END %][% END %]
 };
 
 enum GeoKey {
