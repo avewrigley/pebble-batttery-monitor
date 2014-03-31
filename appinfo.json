@@ -14,7 +14,8 @@
         "temp": 2,
         "city": 3,
         "description": 4,
-        "temp_units": 5
+        "temp_units": 5,
+        "clock_format": 6
     },    
     "capabilities": [ "location", "configurable" ],
     "resources": {

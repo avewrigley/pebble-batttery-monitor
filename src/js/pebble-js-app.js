@@ -5,6 +5,7 @@ function fetchWeather( latitude, longitude )
     var response;
     var req = new XMLHttpRequest();
     var temp_units = localStorage.getItem( "temp_units" ) || "metric";
+    var clock_format = localStorage.getItem( "clock_format" ) || "12h";
     var url = url_root + "&lat=" + latitude + "&lon=" + longitude + "&units=" + temp_units;
     console.log( "GET " + url );
     req.open( 'GET', url, true );
@@ -26,18 +27,20 @@ function fetchWeather( latitude, longitude )
                     console.log( "temp: " + temp );
                     console.log( "desc: " + description );
                     console.log( "temp_units: " + temp_units );
+                    console.log( "clock_format: " + clock_format );
                     var transactionId = Pebble.sendAppMessage(
                         {
                             "temp": "" + temp,
                             "temp_units": "" + temp_units,
+                            "clock_format": "" + clock_format,
                             "city": "" + city,
                             "description": "" + description,
                         },
                         function( e ) {
-                            console.log( "Successfully delivered message with transactionId=" + e.data.transactionId );
+                            console.log( "Successfully delivered weather message with transactionId=" + e.data.transactionId );
                         },
                         function( e ) {
-                            console.log( "Unable to deliver message with transactionId=" + e.data.transactionId + " Error is: " + e.error.message );
+                            console.log( "Unable to deliver weather message with transactionId=" + e.data.transactionId + " Error is: " + e.error.message );
                         }
                     );
                 }
@@ -66,10 +69,10 @@ function locationSuccess( pos )
             "lon": lon,
         },
         function( e ) {
-            console.log( "Successfully delivered message with transactionId=" + e.data.transactionId );
+            console.log( "Successfully delivered location message with transactionId=" + e.data.transactionId );
         },
         function( e ) {
-            console.log( "Unable to deliver message with transactionId=" + e.data.transactionId + " Error is: " + e.error.message );
+            console.log( "Unable to deliver location message with transactionId=" + e.data.transactionId + " Error is: " + e.error.message );
         }
     );
     fetchWeather( coords.latitude, coords.longitude );
@@ -104,7 +107,8 @@ Pebble.addEventListener(
     {
         console.log( "showConfiguration" );
         var temp_units = localStorage.getItem( "temp_units" ) || "metric";
-        var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?temp_units=" + temp_units;
+        var clock_format = localStorage.getItem( "clock_format" ) || "12h";
+        var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?temp_units=" + temp_units + "&clock_format=" + clock_format;
         // var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html";
         console.log( "GET: " + url );
         Pebble.openURL( url );

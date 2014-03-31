@@ -30,6 +30,7 @@ enum GeoKey {
     CITY = 0x3,
     DESCRIPTION = 0x4,
     TEMP_UNITS = 0x5,
+    CLOCK_FORMAT = 0x6,
 };
 
 static AppTimer *timer;
@@ -66,7 +67,6 @@ void in_received_handler( DictionaryIterator *iter, void *context )
     {
         static char geo_text[] = "                                         ";
         strcpy( geo_text, "" );
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "in_received_handler" );
         APP_LOG( APP_LOG_LEVEL_DEBUG, "lon" );
         APP_LOG( APP_LOG_LEVEL_DEBUG, lon_t->value->cstring );
         strcat( geo_text, lon_t->value->cstring );
@@ -74,6 +74,7 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         APP_LOG( APP_LOG_LEVEL_DEBUG, "lat" );
         APP_LOG( APP_LOG_LEVEL_DEBUG, lat_t->value->cstring );
         strcat( geo_text, lat_t->value->cstring );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, geo_text );
         text_layer_set_text( geo_layer, geo_text );
     }
 
@@ -82,16 +83,17 @@ void in_received_handler( DictionaryIterator *iter, void *context )
     {
         static char geo_text[] = "                                         ";
         strcpy( geo_text, "" );
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "in_received_handler" );
         APP_LOG( APP_LOG_LEVEL_DEBUG, "city" );
         APP_LOG( APP_LOG_LEVEL_DEBUG, city->value->cstring );
         strcat( geo_text, city->value->cstring );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, geo_text );
         text_layer_set_text( geo_layer, geo_text );
     }
 
     Tuple *desc_t = dict_find( iter, DESCRIPTION );
     Tuple *temp_t = dict_find( iter, TEMP );
     Tuple *temp_units_t = dict_find( iter, TEMP_UNITS );
+    Tuple *clock_format_t = dict_find( iter, CLOCK_FORMAT );
     if ( temp_t && desc_t )
     {
         static char weather_text[] = "                                       ";
@@ -113,10 +115,11 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         {
             strcat( weather_text, "°F" );
         }
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "clock_format" );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, clock_format_t->value->cstring );
         text_layer_set_text( weather_layer, weather_text );
     }
 }
-
 
 void in_dropped_handler( AppMessageResult reason, void *context ) 
 {

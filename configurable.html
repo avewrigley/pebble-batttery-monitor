@@ -21,14 +21,19 @@
                 return params;
             }
 
-            function saveOptions() 
+            function getOption( key )
             {
-                var e = document.getElementsByName( 'temp_units' );
-                var temp_units;
+                var e = document.getElementsByName( key );
                 for( var i = 0; i < e.length; i++ )
                 {
-                    if( e[i].checked ) temp_units = e[i].value;
+                    if( e[i].checked ) return e[i].value;
                 }
+                return "";
+            }
+            function saveOptions() 
+            {
+                var temp_units = getOption( 'temp_units' );
+                var clock_format = getOption( 'clock_format' );
 
                 var options = {
                     'temp_units': temp_units
@@ -63,6 +68,9 @@
                 <h3>Temperature Units</h3>
                 <div class="radio"><label><input type="radio" name="temp_units" id="metric" value="metric" /> Metric</label></div>
                 <div class="radio"><label><input type="radio" name="temp_units" id="imperial" value="imperial" /> Imperial</label></div>
+                <h3>Clock Format</h3>
+                <div class="radio"><label><input type="radio" name="clock_format" id="12h" value="12h" /> 12 Hour</label></div>
+                <div class="radio"><label><input type="radio" name="clock_format" id="24h" value="24h" /> 24 Hour</label></div>
                 <button class="btn btn-default" onclick="return redirect()">Submit</button>
             </form>
         </div>
