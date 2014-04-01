@@ -13,13 +13,17 @@ TextLayer *am_layer;
 TextLayer *secs_layer; 
 TextLayer *geo_layer; 
 TextLayer *weather_layer; 
+TextLayer *temp_layer; 
 TextLayer *date_layer; 
 TextLayer *battery_layer;
 TextLayer *connection_layer;
 TextLayer *notify_layer; 
 
-static GBitmap *icon_bitmap = NULL;
-static BitmapLayer *icon_layer;
+static GBitmap *weather_bitmap = NULL;
+static BitmapLayer *weather_icon_layer;
+
+static GBitmap *battery_bitmap = NULL;
+static BitmapLayer *battery_icon_layer;
 
 const uint32_t inbound_size = 256;
 const uint32_t outbound_size = 256;
@@ -127,38 +131,37 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         Tuple *icon_t = dict_find( iter, ICON );
         if ( temp_t && desc_t && temp_units_t )
         {
-            static char weather_text[] = "                                       ";
-            strcpy( weather_text, "" );
             APP_LOG( APP_LOG_LEVEL_DEBUG, "description" );
             APP_LOG( APP_LOG_LEVEL_DEBUG, desc_t->value->cstring );
-            strcat( weather_text, desc_t->value->cstring );
-            strcat( weather_text, ", " );
+            text_layer_set_text( weather_layer, desc_t->value->cstring );
+            static char temp_text[] = "                                       ";
             APP_LOG( APP_LOG_LEVEL_DEBUG, "temp" );
             APP_LOG( APP_LOG_LEVEL_DEBUG, temp_t->value->cstring );
-            strcat( weather_text, temp_t->value->cstring );
+            strcpy( temp_text, temp_t->value->cstring );
             APP_LOG( APP_LOG_LEVEL_DEBUG, "temp_units" );
             APP_LOG( APP_LOG_LEVEL_DEBUG, temp_units_t->value->cstring );
             if ( strcmp( temp_units_t->value->cstring, "metric" ) == 0 )
             {
-                strcat( weather_text, "°C" );
+                strcat( temp_text, "ºC" );
             }
             else
             {
-                strcat( weather_text, "°F" );
+                strcat( temp_text, "ºF" );
             }
-            text_layer_set_text( weather_layer, weather_text );
+            APP_LOG( APP_LOG_LEVEL_DEBUG, temp_text );
+            text_layer_set_text( temp_layer, temp_text );
             if ( icon_t )
             {
-                if ( icon_bitmap ) 
+                if ( weather_bitmap ) 
                 {
-                    gbitmap_destroy( icon_bitmap );
+                    gbitmap_destroy( weather_bitmap );
                 }
                 APP_LOG( APP_LOG_LEVEL_DEBUG, "icon" );
                 APP_LOG( APP_LOG_LEVEL_DEBUG, "%d", ( int ) icon_t->value->uint8 );
                 uint32_t resource_id = WEATHER_ICONS[icon_t->value->uint8];
                 APP_LOG( APP_LOG_LEVEL_DEBUG, "%d", ( int ) resource_id );
-                icon_bitmap = gbitmap_create_with_resource( resource_id );
-                bitmap_layer_set_bitmap( icon_layer, icon_bitmap );
+                weather_bitmap = gbitmap_create_with_resource( resource_id );
+                bitmap_layer_set_bitmap( weather_icon_layer, weather_bitmap );
             }
         }
     }
@@ -175,22 +178,42 @@ static void handle_battery( BatteryChargeState charge_state )
     static char battery_text[] = "100% charging";
 
     APP_LOG( APP_LOG_LEVEL_DEBUG, "%d %%", charge_state.charge_percent );
+    snprintf( battery_text, sizeof( battery_text ), "%d%%", charge_state.charge_percent );
+    battery_level = persist_exists( BATTERY_LEVEL ) ? persist_read_int( BATTERY_LEVEL ) : 100;
+    if ( battery_level >= 60 && charge_state.charge_percent < 60 )
+    {
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "battery low" );
+        vibes_short_pulse();
+        persist_write_int( BATTERY_LEVEL, charge_state.charge_percent );
+    }
+    uint32_t resource_id;
     if ( charge_state.is_charging )
     {
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "charging" );
-        snprintf( battery_text, sizeof( battery_text ), "charging: %d%%", charge_state.charge_percent );
+        resource_id = RESOURCE_ID_BATTERY_CHARGING;
     }
-    else 
+    else if ( charge_state.charge_percent < 50 )
     {
-        snprintf( battery_text, sizeof( battery_text ), "%d%%", charge_state.charge_percent );
-        battery_level = persist_exists( BATTERY_LEVEL ) ? persist_read_int( BATTERY_LEVEL ) : 100;
-        if ( battery_level >= 60 && charge_state.charge_percent < 60 )
-        {
-            APP_LOG( APP_LOG_LEVEL_DEBUG, "battery low" );
-            vibes_short_pulse();
-            persist_write_int( BATTERY_LEVEL, charge_state.charge_percent );
-        }
+        resource_id = RESOURCE_ID_BATTERY_25;
     }
+    else if ( charge_state.charge_percent < 75 )
+    {
+        resource_id = RESOURCE_ID_BATTERY_50;
+    }
+    else if ( charge_state.charge_percent < 100 )
+    {
+        resource_id = RESOURCE_ID_BATTERY_75;
+    }
+    else
+    {
+        resource_id = RESOURCE_ID_BATTERY_100;
+    }
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "resource_id: %d", ( int ) resource_id );
+    if ( battery_bitmap ) 
+    {
+        gbitmap_destroy( battery_bitmap );
+    }
+    battery_bitmap = gbitmap_create_with_resource( resource_id );
+    bitmap_layer_set_bitmap( battery_icon_layer, battery_bitmap );
     text_layer_set_text( battery_layer, battery_text );
 }
 
@@ -200,7 +223,7 @@ static void handle_second_tick( struct tm* tick_time, TimeUnits units_changed )
 {
     static char time_text[] = "00:00"; // Needs to be static because it's used by the system later.
     static char am_text[] = "  "; // Needs to be static because it's used by the system later.
-    static char secs_text[] = "00"; // Needs to be static because it's used by the system later.
+    static char secs_text[] = ":00"; // Needs to be static because it's used by the system later.
     static char date_text[] = "Mon 31 Dec"; // Needs to be static because it's used by the system later.
 
     strftime( date_text, sizeof( date_text ), "%a %d %b", tick_time );
@@ -218,7 +241,7 @@ static void handle_second_tick( struct tm* tick_time, TimeUnits units_changed )
     }
     text_layer_set_text( time_layer, time_text );
     text_layer_set_text( am_layer, am_text );
-    strftime( secs_text, sizeof( secs_text ), "%S", tick_time );
+    strftime( secs_text, sizeof( secs_text ), ":%S", tick_time );
     text_layer_set_text( secs_layer, secs_text );
 }
 
@@ -229,7 +252,7 @@ static void handle_bluetooth( bool connected )
     {
         APP_LOG( APP_LOG_LEVEL_DEBUG, "disconnected" );
         vibes_short_pulse();
-        notify( "bluetooth diconnected" );
+        notify( "diconnected" );
     }
 }
 
@@ -239,22 +262,31 @@ static void window_load( Window *window )
     root_layer = window_get_root_layer( window );
     frame = layer_get_frame( root_layer );
 
-    time_layer = text_layer_create( GRect( 0, 0, frame.size.w /* width */, 50/* height */ ) );
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "WIDTH: %d", frame.size.w );
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "HEIGHT: %d", frame.size.h );
+
+    time_layer = text_layer_create( GRect( 0, 0, frame.size.w, 50 ) );
     text_layer_set_text_color( time_layer, GColorWhite );
     text_layer_set_background_color( time_layer, GColorClear );
-    // text_layer_set_font( time_layer, fonts_get_system_font( FONT_KEY_ROBOTO_BOLD_SUBSET_49 ) );
-    text_layer_set_font( time_layer, fonts_get_system_font( FONT_KEY_BITHAM_42_MEDIUM_NUMBERS ) );
+    text_layer_set_font( time_layer, fonts_get_system_font( FONT_KEY_BITHAM_34_MEDIUM_NUMBERS ) );
     text_layer_set_text_alignment( time_layer, GTextAlignmentLeft );
     text_layer_set_text( time_layer, "00:00" );
 
-    am_layer = text_layer_create( GRect( 110, 20, frame.size.w /* width */, 40/* height */ ) );
+    secs_layer = text_layer_create( GRect( 110, 0, frame.size.w-110, 40 ) );
+    text_layer_set_text_color( secs_layer, GColorWhite );
+    text_layer_set_background_color( secs_layer, GColorClear );
+    text_layer_set_font( secs_layer, fonts_get_system_font( FONT_KEY_GOTHIC_28_BOLD ) );
+    text_layer_set_text_alignment( secs_layer, GTextAlignmentLeft );
+    text_layer_set_text( secs_layer, ":00" );
+
+    am_layer = text_layer_create( GRect( 110, 20, frame.size.w-110, 40 ) );
     text_layer_set_text_color( am_layer, GColorWhite );
     text_layer_set_background_color( am_layer, GColorClear );
     text_layer_set_font( am_layer, fonts_get_system_font( FONT_KEY_GOTHIC_24 ) );
     text_layer_set_text_alignment( am_layer, GTextAlignmentLeft );
     text_layer_set_text( am_layer, "  " );
 
-    notify_layer = text_layer_create( GRect( 5, 50, frame.size.w-35 /* width */, 40/* height */ ) );
+    notify_layer = text_layer_create( GRect( 5, 50, frame.size.w-35, 40 ) );
     text_layer_set_text_color( notify_layer, GColorBlack );
     text_layer_set_background_color( notify_layer, GColorWhite );
     text_layer_set_font( notify_layer, fonts_get_system_font( FONT_KEY_GOTHIC_24_BOLD ) );
@@ -262,51 +294,53 @@ static void window_load( Window *window )
     layer_set_hidden( text_layer_get_layer( notify_layer ), true );
     text_layer_set_overflow_mode( notify_layer, GTextOverflowModeWordWrap );
 
-    date_layer = text_layer_create( GRect( 0, 60, frame.size.w /* width */, 30/* height */ ) );
+    date_layer = text_layer_create( GRect( 0, 50, frame.size.w, 30 ) );
     text_layer_set_text_color( date_layer, GColorWhite );
     text_layer_set_background_color( date_layer, GColorClear );
     text_layer_set_font( date_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( date_layer, GTextAlignmentLeft );
     text_layer_set_text( date_layer, "" );
 
-    secs_layer = text_layer_create( GRect( 80, 50, frame.size.w /* width */, 40/* height */ ) );
-    text_layer_set_text_color( secs_layer, GColorWhite );
-    text_layer_set_background_color( secs_layer, GColorClear );
-    text_layer_set_font( secs_layer, fonts_get_system_font( FONT_KEY_BITHAM_34_MEDIUM_NUMBERS ) );
-    text_layer_set_text_alignment( secs_layer, GTextAlignmentLeft );
-    text_layer_set_text( secs_layer, "00" );
-
-    geo_layer = text_layer_create( GRect( 0, 80, frame.size.w /* width */, 20/* height */ ) );
+    geo_layer = text_layer_create( GRect( 70, 50, frame.size.w-70, 30 ) );
     text_layer_set_text_color( geo_layer, GColorWhite );
     text_layer_set_background_color( geo_layer, GColorClear );
-    // text_layer_set_font( geo_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
-    text_layer_set_font( geo_layer, fonts_get_system_font( FONT_KEY_GOTHIC_14 ) );
+    text_layer_set_font( geo_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( geo_layer, GTextAlignmentLeft );
     text_layer_set_text( geo_layer, "" );
     text_layer_set_overflow_mode( geo_layer, GTextOverflowModeWordWrap );
 
-    weather_layer = text_layer_create( GRect( 0, 100, frame.size.w /* width */, 20/* height */ ) );
+    weather_icon_layer = bitmap_layer_create( GRect( 0, 80, 50, 50 ) );
+
+    weather_layer = text_layer_create( GRect( 70, 70, 74, 40 ) );
     text_layer_set_text_color( weather_layer, GColorWhite );
     text_layer_set_background_color( weather_layer, GColorClear );
     text_layer_set_font( weather_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( weather_layer, GTextAlignmentLeft );
     text_layer_set_text( weather_layer, "" );
+    text_layer_set_overflow_mode( weather_layer, GTextOverflowModeWordWrap );
 
-    icon_layer = bitmap_layer_create( GRect( 0, 120, 50, 50 ) );
+    temp_layer = text_layer_create( GRect( 70, 110, 74, 20 ) );
+    text_layer_set_text_color( temp_layer, GColorWhite );
+    text_layer_set_background_color( temp_layer, GColorClear );
+    text_layer_set_font( temp_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
+    text_layer_set_text_alignment( temp_layer, GTextAlignmentLeft );
+    text_layer_set_text( temp_layer, "" );
 
-    connection_layer = text_layer_create( GRect( 60, 120, /* width */ frame.size.w, 20 /* height */ ) );
+    battery_icon_layer = bitmap_layer_create( GRect( 0, 145, 16, 16 ) );
+
+    battery_layer = text_layer_create( GRect( 20, 140, 60, 20 ) );
+    text_layer_set_text_color( battery_layer, GColorWhite );
+    text_layer_set_background_color( battery_layer, GColorClear );
+    text_layer_set_font( battery_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
+    text_layer_set_text_alignment( battery_layer, GTextAlignmentLeft );
+    text_layer_set_text( battery_layer, "100%" );
+
+    connection_layer = text_layer_create( GRect( 70, 140, 80, 20 ) );
     text_layer_set_text_color( connection_layer, GColorWhite );
     text_layer_set_background_color( connection_layer, GColorClear );
     text_layer_set_font( connection_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( connection_layer, GTextAlignmentLeft );
     text_layer_set_text( connection_layer, "disconnected" );
-
-    battery_layer = text_layer_create( GRect( 60, 140, /* width */ frame.size.w, 20 /* height */ ) );
-    text_layer_set_text_color( battery_layer, GColorWhite );
-    text_layer_set_background_color( battery_layer, GColorClear );
-    text_layer_set_font( battery_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
-    text_layer_set_text_alignment( battery_layer, GTextAlignmentLeft );
-    text_layer_set_text( battery_layer, "100% charged" );
 
     layer_add_child( root_layer, text_layer_get_layer( time_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( am_layer ) );
@@ -314,10 +348,12 @@ static void window_load( Window *window )
     layer_add_child( root_layer, text_layer_get_layer( secs_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( geo_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( weather_layer ) );
+    layer_add_child( root_layer, text_layer_get_layer( temp_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( connection_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( battery_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( notify_layer ) );
-    layer_add_child( root_layer, bitmap_layer_get_layer( icon_layer ) );
+    layer_add_child( root_layer, bitmap_layer_get_layer( weather_icon_layer ) );
+    layer_add_child( root_layer, bitmap_layer_get_layer( battery_icon_layer ) );
 
     tick_timer_service_subscribe( SECOND_UNIT, &handle_second_tick );
     handle_battery( battery_state_service_peek() );

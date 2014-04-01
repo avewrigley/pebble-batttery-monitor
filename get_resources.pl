@@ -4,16 +4,25 @@ use strict;
 use warnings;
 use Template;
 use Image::Size;
+use Getopt::Long;
+
+my $force = 0;
+
+GetOptions( "force!" => \$force );
 
 my @images;
+
 for my $d ( qw( d n ) )
 {
     for my $n ( map { sprintf( "%02d", $_ ) }  ( 1 .. 4, 9 .. 11, 13, 50 ) )
     {
         my $image_file = "resources/img/${n}${d}.png";
-        my $cmd = "lwp-request -m GET http://openweathermap.org/img/w/${n}${d}.png > $image_file";
-        warn $cmd;
-        `$cmd`;
+        # if ( $force || ! -e $image_file )
+        # {
+        # my $cmd = "lwp-request -m GET http://openweathermap.org/img/w/${n}${d}.png > $image_file";
+        # warn $cmd;
+        # `$cmd`;
+        # }
         my ( $x, $y ) = imgsize( $image_file );
         push( @images, { file => "img/${n}${d}.png", name => "${n}${d}", x => $x, y => $y } );
     }

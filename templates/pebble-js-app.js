@@ -42,7 +42,7 @@ function fetchWeather( latitude, longitude )
                     var transactionId = Pebble.sendAppMessage(
                         {
                             "temp": "" + temp,
-                            "temp_units": "" + temp_units,
+                            "temp_units": temp_units,
                             "city": "" + city,
                             "description": "" + description,
                             "icon": icon_no,
@@ -112,7 +112,7 @@ Pebble.addEventListener(
     {
         console.log( "ready: " + e.ready );
         locationCallback();
-        window.setInterval( locationCallback, 60 * 60 * 1000 );
+        window.setInterval( locationCallback, 10 * 60 * 1000 );
     }
 );
 

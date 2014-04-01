@@ -26,8 +26,33 @@
                 "type": "png",
                 "name": "[% image.name %]",
                 "file": "[% image.file %]"
-            }[% UNLESS loop.last %],[% END %]
+            },
         [% END %]
+            {
+                "type": "png",
+                "name": "BATTERY_25",
+                "file": "img/battery_25_percent.png"
+            },
+            {
+                "type": "png",
+                "name": "BATTERY_50",
+                "file": "img/battery_50_percent.png"
+            },
+            {
+                "type": "png",
+                "name": "BATTERY_75",
+                "file": "img/battery_75_percent.png"
+            },
+            {
+                "type": "png",
+                "name": "BATTERY_100",
+                "file": "img/battery_100_percent.png"
+            },
+            {
+                "type": "png",
+                "name": "BATTERY_CHARGING",
+                "file": "img/battery_charging.png"
+            }
         ]
     }
 }

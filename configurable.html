@@ -34,10 +34,12 @@
             {
                 var temp_units = getOption( 'temp_units' );
                 var clock_format = getOption( 'clock_format' );
+                var weather_interval = getOption( 'weather_interval' );
 
                 var options = {
                     'temp_units': temp_units,
-                    'clock_format': clock_format
+                    'clock_format': clock_format,
+                    'weather_interval': weather_interval
                 };
                 return options;
             }
@@ -72,6 +74,13 @@
                 <h3>Clock Format</h3>
                 <div class="radio"><label><input type="radio" name="clock_format" id="12h" value="12h" /> 12 Hour</label></div>
                 <div class="radio"><label><input type="radio" name="clock_format" id="24h" value="24h" /> 24 Hour</label></div>
+                <h3>Weather Interval</h3>
+                <div class="radio"><label><input type="radio" name="clock_format" id="10" value="10" /> 10 minutes</label></div>
+                <div class="radio"><label><input type="radio" name="clock_format" id="20" value="20" /> 20 minutes</label></div>
+                <div class="radio"><label><input type="radio" name="clock_format" id="30" value="30" /> 30 minutes</label></div>
+                <div class="radio"><label><input type="radio" name="clock_format" id="40" value="40" /> 40 minutes</label></div>
+                <div class="radio"><label><input type="radio" name="clock_format" id="50" value="50" /> 50 minutes</label></div>
+                <div class="radio"><label><input type="radio" name="clock_format" id="60" value="60" /> 60 minutes</label></div>
                 <button class="btn btn-default" onclick="return redirect()">Submit</button>
             </form>
         </div>
