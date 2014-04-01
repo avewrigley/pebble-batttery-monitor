@@ -23,13 +23,16 @@
 
             function getOption( key )
             {
+                console.log( key + " = " + document.forms[0][key].value );
                 var e = document.getElementsByName( key );
                 for( var i = 0; i < e.length; i++ )
                 {
-                    if( e[i].checked ) return e[i].value;
+                    if( e[i].type === "radio" && e[i].checked ) return e[i].value;
+                    if ( e[i].type === "select-one" ) return e[i].value;
                 }
                 return "";
             }
+
             function saveOptions() 
             {
                 var temp_units = getOption( 'temp_units' );
@@ -50,7 +53,20 @@
                     var params = getQSParams();
                     for ( var k in params )
                     {
-                        document.getElementById( params[k] ).checked = true;
+                        var e = document.getElementsByName( k );
+                        for( var i = 0; i < e.length; i++ )
+                        {
+                            if ( e[i].type === "radio" )
+                            {
+                                if ( e[i].value === params[k] ) e[i].checked = true;
+                            }
+                            if ( e[i].type === "select-one" )
+                            {
+                                e[i].value = params[k];
+                            }
+                            console.log( e[i].type );
+                        }
+                        // document.getElementById( params[k] ).checked = true;
                     }
                 }
             );
@@ -75,7 +91,7 @@
                 <div class="radio"><label><input type="radio" name="clock_format" id="12h" value="12h" /> 12 Hour</label></div>
                 <div class="radio"><label><input type="radio" name="clock_format" id="24h" value="24h" /> 24 Hour</label></div>
                 <h3>Weather Interval</h3>
-                <select class="form-control" name="clock_format">
+                <select class="form-control" name="weather_interval">
                     <option value="10">10 minutes</option>
                     <option value="20">20 minutes</option>
                     <option value="30">30 minutes</option>
