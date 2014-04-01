@@ -140,13 +140,23 @@ function locationCallback()
 
 var locationOptions = { "timeout": 15000, "maximumAge": 60000 }; 
 
+var intvar;
+
+function setWeatherCallback()
+{
+    var weather_interval = localStorage.getItem( "weather_interval" ) || 10;
+    console.log( "weather_interval: " + weather_interval );
+    if ( intvar ) window.clearInterval( intvar );
+    intvar = window.setInterval( locationCallback, weather_interval * 60 * 1000 );
+}
+
 Pebble.addEventListener(
     "ready",
     function(e) 
     {
         console.log( "ready: " + e.ready );
+        setWeatherCallback();
         locationCallback();
-        window.setInterval( locationCallback, 10 * 60 * 1000 );
     }
 );
 
@@ -157,8 +167,15 @@ Pebble.addEventListener(
         console.log( "showConfiguration" );
         var temp_units = localStorage.getItem( "temp_units" ) || "metric";
         var clock_format = localStorage.getItem( "clock_format" ) || "12h";
-        var url = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?temp_units=" + temp_units + "&clock_format=" + clock_format;
+        var weather_interval = localStorage.getItem( "weather_interval" ) || "10";
+        var url = 
+            "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?" + 
+                "temp_units=" + temp_units + 
+                "&clock_format=" + clock_format +
+                "&weather_interval=" + weather_interval
+        ;
         console.log( "GET: " + url );
+        setWeatherCallback();
         Pebble.openURL( url );
     }
 );

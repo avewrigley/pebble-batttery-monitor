@@ -142,11 +142,11 @@ void in_received_handler( DictionaryIterator *iter, void *context )
             APP_LOG( APP_LOG_LEVEL_DEBUG, temp_units_t->value->cstring );
             if ( strcmp( temp_units_t->value->cstring, "metric" ) == 0 )
             {
-                strcat( temp_text, "ºC" );
+                strcat( temp_text, " C" );
             }
             else
             {
-                strcat( temp_text, "ºF" );
+                strcat( temp_text, " F" );
             }
             APP_LOG( APP_LOG_LEVEL_DEBUG, temp_text );
             text_layer_set_text( temp_layer, temp_text );
