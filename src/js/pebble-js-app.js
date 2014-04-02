@@ -50,13 +50,10 @@ function fetchWeather( latitude, longitude )
     console.log( "GET " + url );
     req.open( 'GET', url, true );
     req.onload = function(e) {
-        console.log( req.readyState );
         if ( req.readyState == 4 ) 
         {
-            console.log( req.status );
             if ( req.status == 200 ) 
             {
-                console.log( req.responseText );
                 response = JSON.parse(req.responseText);
                 if ( response )
                 {
@@ -103,19 +100,14 @@ function fetchWeather( latitude, longitude )
 function locationSuccess( pos ) 
 {
     var coords = pos.coords;
-    console.log( "locationSuccess" );
     var lat = "" + coords.latitude.toFixed( 3 );
     var lon = "" + coords.longitude.toFixed( 3 );
     console.log( "latitude: " + lat );
     console.log( "longitude: " + lon );
-    console.log( "version 6" );
-    var clock_format = localStorage.getItem( "clock_format" ) || "12h";
-    console.log( "clock_format: " + clock_format );
     var transactionId = Pebble.sendAppMessage(
         {
             "lat": lat,
             "lon": lon,
-            "clock_format": "" + clock_format,
         },
         function( e ) {
             console.log( "Successfully delivered location message with transactionId=" + e.data.transactionId );
@@ -133,9 +125,26 @@ function locationError( err )
     console.warn( 'location error (' + err.code + '): ' + err.message );
 }
 
-function locationCallback()
+function getLocation()
 {
-    locationWatcher = window.navigator.geolocation.getCurrentPosition( locationSuccess, locationError, locationOptions );
+    window.navigator.geolocation.getCurrentPosition( locationSuccess, locationError, locationOptions );
+}
+
+function configUpdate()
+{
+    var clock_format = localStorage.getItem( "clock_format" ) || "12h";
+    console.log( "clock_format: " + clock_format );
+    var transactionId = Pebble.sendAppMessage(
+        {
+            "clock_format": "" + clock_format,
+        },
+        function( e ) {
+            console.log( "Successfully delivered config message with transactionId=" + e.data.transactionId );
+        },
+        function( e ) {
+            console.log( "Unable to deliver config message with transactionId=" + e.data.transactionId + " Error is: " + e.error.message );
+        }
+    );
 }
 
 var locationOptions = { "timeout": 15000, "maximumAge": 60000 }; 
@@ -147,16 +156,16 @@ function setWeatherCallback()
     var weather_interval = localStorage.getItem( "weather_interval" ) || 10;
     console.log( "weather_interval: " + weather_interval );
     if ( intvar ) window.clearInterval( intvar );
-    intvar = window.setInterval( locationCallback, weather_interval * 60 * 1000 );
+    intvar = window.setInterval( getLocation, weather_interval * 60 * 1000 );
 }
 
 Pebble.addEventListener(
     "ready",
     function(e) 
     {
-        console.log( "ready: " + e.ready );
         setWeatherCallback();
-        locationCallback();
+        getLocation();
+        configUpdate();
     }
 );
 
@@ -164,7 +173,6 @@ Pebble.addEventListener(
     "showConfiguration",
     function(e) 
     {
-        console.log( "showConfiguration" );
         var temp_units = localStorage.getItem( "temp_units" ) || "metric";
         var clock_format = localStorage.getItem( "clock_format" ) || "12h";
         var weather_interval = localStorage.getItem( "weather_interval" ) || "10";
@@ -175,7 +183,6 @@ Pebble.addEventListener(
                 "&weather_interval=" + weather_interval
         ;
         console.log( "GET: " + url );
-        setWeatherCallback();
         Pebble.openURL( url );
     }
 );
@@ -186,12 +193,24 @@ Pebble.addEventListener(
     {
         console.log( "webview closed" );
         var options = JSON.parse( decodeURIComponent( e.response ) );
-        console.log( options );
         for ( k in options )
         {
             console.log( "SET: " + k + " = " + options[k] );
             localStorage.setItem( k, options[k] );
-            locationCallback();
+        }
+        setWeatherCallback();
+        getLocation();
+        configUpdate();
+    }
+);
+Pebble.addEventListener(
+    "appmessage",
+    function(e) 
+    {
+        console.log( "message" );
+        if ( e.payload.fetch_weather )
+        {
+            getLocation();
         }
     }
 );
