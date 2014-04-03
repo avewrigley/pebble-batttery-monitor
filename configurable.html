@@ -84,21 +84,30 @@
         <div class="container">
             <h2>Battery Monitor Watchface</h2>
             <form role="form">
-                <h3>Temperature Units</h3>
-                <div class="radio"><label><input type="radio" name="temp_units" id="metric" value="metric" /> Metric</label></div>
-                <div class="radio"><label><input type="radio" name="temp_units" id="imperial" value="imperial" /> Imperial</label></div>
-                <h3>Clock Format</h3>
-                <div class="radio"><label><input type="radio" name="clock_format" id="12h" value="12h" /> 12 Hour</label></div>
-                <div class="radio"><label><input type="radio" name="clock_format" id="24h" value="24h" /> 24 Hour</label></div>
-                <h3>Weather Interval</h3>
-                <select class="form-control" name="weather_interval">
-                    <option value="10">10 minutes</option>
-                    <option value="20">20 minutes</option>
-                    <option value="30">30 minutes</option>
-                    <option value="40">40 minutes</option>
-                    <option value="50">50 minutes</option>
-                    <option value="60">60 minutes</option>
-                </select>
+                <div class="form-group">
+                    <label>Temperature Units</label>
+                    <div class="radio"><label><input type="radio" name="temp_units" id="metric" value="metric" /> Metric</label></div>
+                    <div class="radio"><label><input type="radio" name="temp_units" id="imperial" value="imperial" /> Imperial</label></div>
+                </div>
+                <div class="form-group">
+                    <label>Clock Format</label>
+                    <div class="radio"><label><input type="radio" name="clock_format" id="12h" value="12h" /> 12 Hour</label></div>
+                    <div class="radio"><label><input type="radio" name="clock_format" id="24h" value="24h" /> 24 Hour</label></div>
+                </div>
+                <div class="form-group">
+                    <label for="weather_interval">Weather Refresh Interval</label>
+                    <select class="form-control" id="weather_interval" name="weather_interval">
+                        <option value="10">10 minutes</option>
+                        <option value="20">20 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="40">40 minutes</option>
+                        <option value="50">50 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="120">2 hours</option>
+                        <option value="360">6 hours</option>
+                        <option value="1440">1 day</option>
+                    </select>
+                </div>
                 <button class="btn btn-default" onclick="return redirect()">Submit</button>
             </form>
         </div>
