@@ -328,7 +328,7 @@ static void window_load( Window *window )
     text_layer_set_text_alignment( am_layer, GTextAlignmentLeft );
     text_layer_set_text( am_layer, "  " );
 
-    notify_layer = text_layer_create( GRect( 5, 50, frame.size.w-35, 40 ) );
+    notify_layer = text_layer_create( GRect( 10, 100, frame.size.w-25, 50 ) );
     text_layer_set_text_color( notify_layer, GColorBlack );
     text_layer_set_background_color( notify_layer, GColorWhite );
     text_layer_set_font( notify_layer, fonts_get_system_font( FONT_KEY_GOTHIC_24_BOLD ) );
@@ -402,9 +402,9 @@ static void window_load( Window *window )
     layer_add_child( root_layer, text_layer_get_layer( temp_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( connection_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( battery_layer ) );
-    layer_add_child( root_layer, text_layer_get_layer( notify_layer ) );
     layer_add_child( root_layer, bitmap_layer_get_layer( weather_icon_layer ) );
     layer_add_child( root_layer, bitmap_layer_get_layer( battery_icon_layer ) );
+    layer_add_child( root_layer, text_layer_get_layer( notify_layer ) );
 
     init_time();
     tick_timer_service_subscribe( SECOND_UNIT, &handle_second_tick );
