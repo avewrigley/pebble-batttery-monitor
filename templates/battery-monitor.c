@@ -13,6 +13,7 @@ TextLayer *am_layer;
 TextLayer *secs_layer; 
 TextLayer *geo_layer; 
 TextLayer *weather_layer; 
+TextLayer *datestamp_layer; 
 TextLayer *temp_layer; 
 TextLayer *date_layer; 
 TextLayer *battery_layer;
@@ -47,6 +48,7 @@ enum GeoKey {
     CLOCK_FORMAT = 0x6,
     ICON = 0x7,
     FETCH_WEATHER = 0x8,
+    DATESTAMP = 0x9
 };
 
 static AppTimer *timer;
@@ -112,14 +114,23 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         }
 
         Tuple *desc_t = dict_find( iter, DESCRIPTION );
-        Tuple *temp_t = dict_find( iter, TEMP );
-        Tuple *temp_units_t = dict_find( iter, TEMP_UNITS );
-        Tuple *icon_t = dict_find( iter, ICON );
-        if ( temp_t && desc_t && temp_units_t )
+        if ( desc_t )
         {
             APP_LOG( APP_LOG_LEVEL_DEBUG, "description" );
             APP_LOG( APP_LOG_LEVEL_DEBUG, desc_t->value->cstring );
             text_layer_set_text( weather_layer, desc_t->value->cstring );
+        }
+        Tuple *datestamp_t = dict_find( iter, DATESTAMP );
+        if ( datestamp_t )
+        {
+            APP_LOG( APP_LOG_LEVEL_DEBUG, "datestamp" );
+            APP_LOG( APP_LOG_LEVEL_DEBUG, datestamp_t->value->cstring );
+            text_layer_set_text( datestamp_layer, datestamp_t->value->cstring );
+        }
+        Tuple *temp_t = dict_find( iter, TEMP );
+        Tuple *temp_units_t = dict_find( iter, TEMP_UNITS );
+        if ( temp_t && temp_units_t )
+        {
             static char temp_text[] = "                                       ";
             APP_LOG( APP_LOG_LEVEL_DEBUG, "temp" );
             APP_LOG( APP_LOG_LEVEL_DEBUG, temp_t->value->cstring );
@@ -135,18 +146,19 @@ void in_received_handler( DictionaryIterator *iter, void *context )
                 strcat( temp_text, " F" );
             }
             text_layer_set_text( temp_layer, temp_text );
-            if ( icon_t )
+        }
+        Tuple *icon_t = dict_find( iter, ICON );
+        if ( icon_t )
+        {
+            if ( weather_bitmap ) 
             {
-                if ( weather_bitmap ) 
-                {
-                    gbitmap_destroy( weather_bitmap );
-                }
-                APP_LOG( APP_LOG_LEVEL_DEBUG, "icon" );
-                APP_LOG( APP_LOG_LEVEL_DEBUG, "%d", ( int ) icon_t->value->uint8 );
-                uint32_t resource_id = WEATHER_ICONS[icon_t->value->uint8];
-                weather_bitmap = gbitmap_create_with_resource( resource_id );
-                bitmap_layer_set_bitmap( weather_icon_layer, weather_bitmap );
+                gbitmap_destroy( weather_bitmap );
             }
+            APP_LOG( APP_LOG_LEVEL_DEBUG, "icon" );
+            APP_LOG( APP_LOG_LEVEL_DEBUG, "%d", ( int ) icon_t->value->uint8 );
+            uint32_t resource_id = WEATHER_ICONS[icon_t->value->uint8];
+            weather_bitmap = gbitmap_create_with_resource( resource_id );
+            bitmap_layer_set_bitmap( weather_icon_layer, weather_bitmap );
         }
     }
 }
@@ -291,24 +303,28 @@ static void window_load( Window *window )
     root_layer = window_get_root_layer( window );
     frame = layer_get_frame( root_layer );
 
+    GFont custom_font_36 = fonts_load_custom_font( resource_get_handle( RESOURCE_ID_FONT_CONSOLA_MONO_36 ) );
+
     time_layer = text_layer_create( GRect( 0, 0, frame.size.w, 50 ) );
     text_layer_set_text_color( time_layer, GColorWhite );
     text_layer_set_background_color( time_layer, GColorClear );
-    text_layer_set_font( time_layer, fonts_get_system_font( FONT_KEY_BITHAM_42_MEDIUM_NUMBERS ) );
+    text_layer_set_font( time_layer, custom_font_36 );
     text_layer_set_text_alignment( time_layer, GTextAlignmentLeft );
     text_layer_set_text( time_layer, "00:00" );
 
-    secs_layer = text_layer_create( GRect( 110, 0, frame.size.w-110, 40 ) );
+    GFont custom_font_20 = fonts_load_custom_font( resource_get_handle( RESOURCE_ID_FONT_CONSOLA_MONO_20 ) );
+
+    secs_layer = text_layer_create( GRect( 100, 0, frame.size.w-100, 40 ) );
     text_layer_set_text_color( secs_layer, GColorWhite );
     text_layer_set_background_color( secs_layer, GColorClear );
-    text_layer_set_font( secs_layer, fonts_get_system_font( FONT_KEY_GOTHIC_28_BOLD ) );
+    text_layer_set_font( secs_layer, custom_font_20 );
     text_layer_set_text_alignment( secs_layer, GTextAlignmentLeft );
     text_layer_set_text( secs_layer, ":00" );
 
     am_layer = text_layer_create( GRect( 110, 20, frame.size.w-110, 40 ) );
     text_layer_set_text_color( am_layer, GColorWhite );
     text_layer_set_background_color( am_layer, GColorClear );
-    text_layer_set_font( am_layer, fonts_get_system_font( FONT_KEY_GOTHIC_24_BOLD ) );
+    text_layer_set_font( am_layer, custom_font_20 );
     text_layer_set_text_alignment( am_layer, GTextAlignmentLeft );
     text_layer_set_text( am_layer, "  " );
 
@@ -327,7 +343,7 @@ static void window_load( Window *window )
     text_layer_set_text_alignment( date_layer, GTextAlignmentLeft );
     text_layer_set_text( date_layer, "" );
 
-    geo_layer = text_layer_create( GRect( 70, 50, frame.size.w-70, 30 ) );
+    geo_layer = text_layer_create( GRect( 70, 50, frame.size.w-70, 50 ) );
     text_layer_set_text_color( geo_layer, GColorWhite );
     text_layer_set_background_color( geo_layer, GColorClear );
     text_layer_set_font( geo_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
@@ -335,12 +351,20 @@ static void window_load( Window *window )
     text_layer_set_text( geo_layer, "" );
     text_layer_set_overflow_mode( geo_layer, GTextOverflowModeWordWrap );
 
-    weather_icon_layer = bitmap_layer_create( GRect( 0, 80, 50, 50 ) );
+    weather_icon_layer = bitmap_layer_create( GRect( 0, 70, 50, 50 ) );
+
+    datestamp_layer = text_layer_create( GRect( 0, 120, frame.size.w, 20 ) );
+    text_layer_set_text_color( datestamp_layer, GColorWhite );
+    text_layer_set_background_color( datestamp_layer, GColorClear );
+    text_layer_set_font( datestamp_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
+    text_layer_set_text_alignment( datestamp_layer, GTextAlignmentLeft );
+    text_layer_set_text( datestamp_layer, "" );
+    text_layer_set_overflow_mode( datestamp_layer, GTextOverflowModeWordWrap );
 
     weather_layer = text_layer_create( GRect( 70, 70, frame.size.w-70, 50 ) );
     text_layer_set_text_color( weather_layer, GColorWhite );
     text_layer_set_background_color( weather_layer, GColorClear );
-    text_layer_set_font( weather_layer, fonts_get_system_font( FONT_KEY_GOTHIC_24_BOLD ) );
+    text_layer_set_font( weather_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18_BOLD ) );
     text_layer_set_text_alignment( weather_layer, GTextAlignmentLeft );
     text_layer_set_text( weather_layer, "" );
     text_layer_set_overflow_mode( weather_layer, GTextOverflowModeWordWrap );
@@ -374,6 +398,7 @@ static void window_load( Window *window )
     layer_add_child( root_layer, text_layer_get_layer( secs_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( geo_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( weather_layer ) );
+    layer_add_child( root_layer, text_layer_get_layer( datestamp_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( temp_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( connection_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( battery_layer ) );

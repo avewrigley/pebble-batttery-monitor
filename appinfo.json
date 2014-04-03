@@ -17,7 +17,8 @@
         "temp_units": 5,
         "clock_format": 6,
         "icon": 7,
-        "fetch_weather": 8
+        "fetch_weather": 8,
+        "datestamp": 9
     },    
     "capabilities": [ "location", "configurable" ],
     "resources": {
@@ -155,7 +156,28 @@
                 "type": "png",
                 "name": "BATTERY_CHARGING",
                 "file": "img/battery_charging.png"
-            }
+            },
+            {
+                "type": "font",
+                "name": "FONT_CONSOLA_MONO_36",
+                "file": "fonts/consolamono/ConsolaMono_36.ttf"
+            }, 
+            {
+                "type": "font",
+                "name": "FONT_CONSOLA_MONO_20",
+                "file": "fonts/consolamono/ConsolaMono_20.ttf"
+            }, 
+            {
+                "type": "font",
+                "name": "FONT_ANON_PRO_B_36",
+                "file": "fonts/anon-pro/anon-pro-B_36.ttf"
+            }, 
+            {
+                "type": "font",
+                "name": "FONT_ANON_PRO_B_20",
+                "file": "fonts/anon-pro/anon-pro-B_20.ttf"
+            } 
+
         ]
     }
 }

@@ -40,7 +40,8 @@ var icons = {
 };
 
 // var url_root = "http://api.openweathermap.org/data/2.5/forecast?cnt=1&mode=json";
-var url_root = "http://api.openweathermap.org/data/2.5/weather?cnt=1&mode=json";
+var url_root = "http://api.openweathermap.org/data/2.5/forecast?mode=json";
+var days = [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" ];
 function fetchWeather( latitude, longitude ) 
 {
     var response;
@@ -54,12 +55,20 @@ function fetchWeather( latitude, longitude )
         {
             if ( req.status == 200 ) 
             {
-                response = JSON.parse(req.responseText);
+                response = JSON.parse( req.responseText );
                 if ( response )
                 {
-                    var city = response.name;
+                    var forecast_no = parseInt( localStorage.getItem( "forecast_no" ) ) || 0;
+                    console.log( "forecast_no: " + forecast_no );
+                    var city = response.city.name;
                     console.log( "city: " + city );
-                    var weather = response.weather[0];
+                    var forecast = response.list[forecast_no];
+                    forecast_no = forecast_no + 1;
+                    console.log( "save forecast_no: " + forecast_no );
+                    forecast_no = forecast_no % 5;
+                    console.log( "save forecast_no: " + forecast_no );
+                    localStorage.setItem( "forecast_no", forecast_no );
+                    var weather = forecast.weather[0];
                     console.log( weather );
                     var description = weather.description;
                     console.log( "desc: " + description );
@@ -67,9 +76,20 @@ function fetchWeather( latitude, longitude )
                     console.log( "icon: " + icon );
                     var icon_no = icons[icon];
                     console.log( "icon_no: " + icon_no );
-                    var temp = response.main.temp;
+                    var temp = forecast.main.temp;
                     console.log( "temp: " + temp );
                     console.log( "temp_units: " + temp_units );
+                    var dt = forecast.dt;
+                    console.log( "dt: " + dt );
+                    var date = new Date( dt * 1000 );
+                    var h = date.getHours().toString();
+                    if ( h.length == 1 )  h = "0" + h;
+                    var s = date.getSeconds().toString();
+                    if ( s.length == 1 )  s = "0" + s;
+                    var time = h + ":" + s;
+                    var day = days[date.getDay()];
+                    console.log( "time: " + time );
+                    console.log( "day: " + day );
                     var transactionId = Pebble.sendAppMessage(
                         {
                             "temp": "" + temp,
@@ -77,6 +97,7 @@ function fetchWeather( latitude, longitude )
                             "city": "" + city,
                             "description": "" + description,
                             "icon": icon_no,
+                            "datestamp": day + " " + time,
                         },
                         function( e ) {
                             console.log( "Successfully delivered weather message with transactionId=" + e.data.transactionId );
@@ -166,6 +187,7 @@ Pebble.addEventListener(
         setWeatherCallback();
         getLocation();
         configUpdate();
+        localStorage.setItem( "forecast_no", 0 );
     }
 );
 
