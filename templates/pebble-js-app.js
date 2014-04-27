@@ -24,46 +24,40 @@ function fetchWeather( latitude, longitude )
                 response = JSON.parse( req.responseText );
                 if ( response )
                 {
-                    var forecast_no = parseInt( localStorage.getItem( "forecast_no" ) ) || 0;
-                    console.log( "forecast_no: " + forecast_no );
                     var city = response.city.name;
                     console.log( "city: " + city );
-                    var forecast = response.list[forecast_no];
-                    forecast_no = forecast_no + 1;
-                    console.log( "save forecast_no: " + forecast_no );
-                    forecast_no = forecast_no % 5;
-                    console.log( "save forecast_no: " + forecast_no );
-                    localStorage.setItem( "forecast_no", forecast_no );
-                    var weather = forecast.weather[0];
-                    console.log( weather );
-                    var description = weather.description;
-                    console.log( "desc: " + description );
-                    var icon = weather.icon;
-                    console.log( "icon: " + icon );
-                    var icon_no = icons[icon];
-                    console.log( "icon_no: " + icon_no );
-                    var temp = forecast.main.temp;
-                    console.log( "temp: " + temp );
-                    console.log( "temp_units: " + temp_units );
-                    var dt = forecast.dt;
-                    console.log( "dt: " + dt );
-                    var date = new Date( dt * 1000 );
-                    var h = date.getHours().toString();
-                    if ( h.length == 1 )  h = "0" + h;
-                    var s = date.getSeconds().toString();
-                    if ( s.length == 1 )  s = "0" + s;
-                    var time = h + ":" + s;
-                    var day = days[date.getDay()];
-                    console.log( "time: " + time );
-                    console.log( "day: " + day );
+                    var description = [];
+                    var icon_no = [];
+                    var temp = [];
+                    var time = [];
+                    var datestamp = [];
+                    for ( var i = 0; i < 5; i++ )
+                    {
+                        var forecast = response.list[i];
+                        var weather = forecast.weather[0];
+                        description.push( weather.description );
+                        var icon = weather.icon;
+                        icon_no.push( icons[icon] );
+                        temp.push( forecast.main.temp );
+                        var dt = forecast.dt;
+                        var date = new Date( dt * 1000 );
+                        var h = date.getHours().toString();
+                        if ( h.length == 1 )  h = "0" + h;
+                        var s = date.getSeconds().toString();
+                        if ( s.length == 1 )  s = "0" + s;
+                        var time = h + ":" + s;
+                        var day = days[date.getDay()];
+                        datestamp.push( day + " " + time );
+                        console.log( "description = " + weather.description + ", icon = " + icons[icon] + ", datestamp = " + day + " " + time + ", temp = " + forecast.main.temp );
+                    }
                     var transactionId = Pebble.sendAppMessage(
                         {
-                            "temp": "" + temp,
+                            "temp": "" + temp.join( ";" ),
                             "temp_units": temp_units,
                             "city": "" + city,
-                            "description": "" + description,
-                            "icon": icon_no,
-                            "datestamp": day + " " + time,
+                            "description": "" + description.join( ";" ),
+                            "icon": icon_no.join( ";" ),
+                            "datestamp": datestamp.join( ";" )
                         },
                         function( e ) {
                             console.log( "Successfully delivered weather message with transactionId=" + e.data.transactionId );
@@ -120,7 +114,6 @@ function getLocation()
 function configUpdate()
 {
     var clock_format = localStorage.getItem( "clock_format" ) || "12h";
-    console.log( "clock_format: " + clock_format );
     var transactionId = Pebble.sendAppMessage(
         {
             "clock_format": "" + clock_format,
@@ -141,7 +134,6 @@ var intvar;
 function setWeatherCallback()
 {
     var weather_interval = localStorage.getItem( "weather_interval" ) || 10;
-    console.log( "weather_interval: " + weather_interval );
     if ( intvar ) window.clearInterval( intvar );
     intvar = window.setInterval( getLocation, weather_interval * 60 * 1000 );
 }
@@ -195,7 +187,6 @@ Pebble.addEventListener(
     "appmessage",
     function(e) 
     {
-        console.log( "message" );
         if ( e.payload.fetch_weather )
         {
             getLocation();
