@@ -19,7 +19,8 @@ TextLayer *battery_layer;
 TextLayer *connection_layer;
 TextLayer *notify_layer; 
 
-static GBitmap *weather_bitmap = NULL;
+static GBitmap *weather_bitmap[18];
+
 static BitmapLayer *weather_icon_layer;
 
 static GBitmap *battery_bitmap = NULL;
@@ -31,28 +32,6 @@ const uint32_t outbound_size = 256;
 #define BATTERY_LEVEL 1
 static int battery_level = 100;
 static char clock_format[] = "12h";
-
-static uint32_t WEATHER_ICONS[] = {
-
-    RESOURCE_ID_01d,
-    RESOURCE_ID_02d,
-    RESOURCE_ID_03d,
-    RESOURCE_ID_04d,
-    RESOURCE_ID_09d,
-    RESOURCE_ID_10d,
-    RESOURCE_ID_11d,
-    RESOURCE_ID_13d,
-    RESOURCE_ID_50d,
-    RESOURCE_ID_01n,
-    RESOURCE_ID_02n,
-    RESOURCE_ID_03n,
-    RESOURCE_ID_04n,
-    RESOURCE_ID_09n,
-    RESOURCE_ID_10n,
-    RESOURCE_ID_11n,
-    RESOURCE_ID_13n,
-    RESOURCE_ID_50n
-};
 
 enum GeoKey {
     LAT = 0x0,
@@ -152,6 +131,8 @@ void set_array( char **array, char *str )
     free( text );
 }
 
+char *weather_str;
+
 static void cycle_weather()
 {
     if ( datestamp[weather_no] == NULL )
@@ -162,8 +143,13 @@ static void cycle_weather()
     if ( datestamp[weather_no] != NULL ) text_layer_set_text( datestamp_layer, datestamp[weather_no] );
     if ( description[weather_no] != NULL && temperature[weather_no] != NULL )
     {
+        // APP_LOG( APP_LOG_LEVEL_DEBUG, "desc: %s", description[weather_no] );
         int len = strlen( description[weather_no] ) + strlen( temperature[weather_no] ) + strlen( temp_units ) + 2;
-        char *weather_str = malloc( len );
+        if ( weather_str != NULL )
+        {
+            free( weather_str );
+        }
+        weather_str = malloc( len );
         strcpy( weather_str, description[weather_no] );
         strcat( weather_str, "\n" );
         strcat( weather_str, temperature[weather_no] );
@@ -174,9 +160,8 @@ static void cycle_weather()
     {
         char c = icon[weather_no][0];
         int icon_no = c - '0';
-        uint32_t resource_id = WEATHER_ICONS[icon_no];
-        weather_bitmap = gbitmap_create_with_resource( resource_id );
-        bitmap_layer_set_bitmap( weather_icon_layer, weather_bitmap );
+        // APP_LOG( APP_LOG_LEVEL_DEBUG, "icon no. %i", icon_no );
+        bitmap_layer_set_bitmap( weather_icon_layer, weather_bitmap[icon_no] );
     }
     weather_no = weather_no + 1;
     if ( weather_no == NO_FORECASTS ) weather_no = 0;
@@ -237,10 +222,6 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         Tuple *icon_t = dict_find( iter, ICON );
         if ( icon_t )
         {
-            if ( weather_bitmap ) 
-            {
-                gbitmap_destroy( weather_bitmap );
-            }
             APP_LOG( APP_LOG_LEVEL_DEBUG, "icon %s", icon_t->value->cstring );
             set_array( icon, icon_t->value->cstring );
         }
@@ -299,6 +280,7 @@ static void handle_battery( BatteryChargeState charge_state )
 
 static void send_weather_request()
 {
+    notify( "get weather" );
     DictionaryIterator *iter;
     app_message_outbox_begin( &iter );
     if ( iter == NULL ) 
@@ -403,7 +385,7 @@ static void window_load( Window *window )
 
     GFont custom_font_20 = fonts_load_custom_font( resource_get_handle( RESOURCE_ID_FONT_CONSOLA_MONO_20 ) );
 
-    secs_layer = text_layer_create( GRect( 100, 0, frame.size.w-100, 40 ) );
+    secs_layer = text_layer_create( GRect( 105, 0, frame.size.w-100, 40 ) );
     text_layer_set_text_color( secs_layer, GColorWhite );
     text_layer_set_background_color( secs_layer, GColorClear );
     text_layer_set_font( secs_layer, custom_font_20 );
@@ -438,7 +420,7 @@ static void window_load( Window *window )
     datestamp_layer = text_layer_create( GRect( 0, 120, frame.size.w, 20 ) );
     text_layer_set_text_color( datestamp_layer, GColorWhite );
     text_layer_set_background_color( datestamp_layer, GColorClear );
-    text_layer_set_font( datestamp_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
+    text_layer_set_font( datestamp_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18_BOLD ) );
     text_layer_set_text_alignment( datestamp_layer, GTextAlignmentLeft );
     text_layer_set_text( datestamp_layer, "" );
     text_layer_set_overflow_mode( datestamp_layer, GTextOverflowModeWordWrap );
@@ -448,7 +430,6 @@ static void window_load( Window *window )
     text_layer_set_background_color( weather_layer, GColorClear );
     text_layer_set_font( weather_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18_BOLD ) );
     text_layer_set_text_alignment( weather_layer, GTextAlignmentLeft );
-    text_layer_set_text( weather_layer, "" );
     text_layer_set_overflow_mode( weather_layer, GTextOverflowModeWordWrap );
 
     geo_layer = text_layer_create( GRect( 70, 120, frame.size.w-70, 20 ) );
@@ -457,7 +438,7 @@ static void window_load( Window *window )
     text_layer_set_font( geo_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( geo_layer, GTextAlignmentLeft );
     text_layer_set_text( geo_layer, "" );
-    text_layer_set_overflow_mode( weather_layer, GTextOverflowModeFill );
+    text_layer_set_overflow_mode( geo_layer, GTextOverflowModeFill );
 
     battery_icon_layer = bitmap_layer_create( GRect( 0, 145, 16, 16 ) );
 
@@ -531,9 +512,45 @@ static void click_config_provider(void *context) {
     window_long_click_subscribe( BUTTON_ID_SELECT, 0, select_long_click_handler, NULL );
 }
 
-// Handle the start-up of the app
 static void do_init( void ) 
 {
+    
+    weather_bitmap[0] = gbitmap_create_with_resource( RESOURCE_ID_01d );
+    
+    weather_bitmap[1] = gbitmap_create_with_resource( RESOURCE_ID_02d );
+    
+    weather_bitmap[2] = gbitmap_create_with_resource( RESOURCE_ID_03d );
+    
+    weather_bitmap[3] = gbitmap_create_with_resource( RESOURCE_ID_04d );
+    
+    weather_bitmap[4] = gbitmap_create_with_resource( RESOURCE_ID_09d );
+    
+    weather_bitmap[5] = gbitmap_create_with_resource( RESOURCE_ID_10d );
+    
+    weather_bitmap[6] = gbitmap_create_with_resource( RESOURCE_ID_11d );
+    
+    weather_bitmap[7] = gbitmap_create_with_resource( RESOURCE_ID_13d );
+    
+    weather_bitmap[8] = gbitmap_create_with_resource( RESOURCE_ID_50d );
+    
+    weather_bitmap[9] = gbitmap_create_with_resource( RESOURCE_ID_01n );
+    
+    weather_bitmap[10] = gbitmap_create_with_resource( RESOURCE_ID_02n );
+    
+    weather_bitmap[11] = gbitmap_create_with_resource( RESOURCE_ID_03n );
+    
+    weather_bitmap[12] = gbitmap_create_with_resource( RESOURCE_ID_04n );
+    
+    weather_bitmap[13] = gbitmap_create_with_resource( RESOURCE_ID_09n );
+    
+    weather_bitmap[14] = gbitmap_create_with_resource( RESOURCE_ID_10n );
+    
+    weather_bitmap[15] = gbitmap_create_with_resource( RESOURCE_ID_11n );
+    
+    weather_bitmap[16] = gbitmap_create_with_resource( RESOURCE_ID_13n );
+    
+    weather_bitmap[17] = gbitmap_create_with_resource( RESOURCE_ID_50n );
+    
     window = window_create();
     window_set_background_color( window, GColorBlack );
     window_set_fullscreen( window, true );

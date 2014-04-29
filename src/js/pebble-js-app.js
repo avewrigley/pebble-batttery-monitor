@@ -72,7 +72,7 @@ function fetchWeather( latitude, longitude )
                         description.push( weather.description );
                         var icon = weather.icon;
                         icon_no.push( icons[icon] );
-                        temp.push( forecast.main.temp );
+                        temp.push( forecast.main.temp.toFixed(1) );
                         var dt = forecast.dt;
                         var date = new Date( dt * 1000 );
                         var h = date.getHours().toString();
