@@ -11,9 +11,7 @@ GRect frame;
 TextLayer *time_layer; 
 TextLayer *am_layer; 
 TextLayer *secs_layer; 
-TextLayer *geo_layer; 
 TextLayer *weather_layer; 
-TextLayer *datestamp_layer; 
 TextLayer *date_layer; 
 TextLayer *battery_layer;
 TextLayer *connection_layer;
@@ -56,6 +54,9 @@ char *icon[NO_FORECASTS];
 char *datestamp[NO_FORECASTS];
 char *temp_units = " C";
 int weather_no = 0;
+
+char *weather_str;
+char *geo_str;
 
 static void notify_timer_callback( void *data ) 
 {
@@ -131,29 +132,31 @@ void set_array( char **array, char *str )
     free( text );
 }
 
-char *weather_str;
-
 static void cycle_weather()
 {
     if ( datestamp[weather_no] == NULL )
     {
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "no forecast no. %i", weather_no );
+        // APP_LOG( APP_LOG_LEVEL_DEBUG, "no forecast no. %i", weather_no );
         return;
     }
-    if ( datestamp[weather_no] != NULL ) text_layer_set_text( datestamp_layer, datestamp[weather_no] );
-    if ( description[weather_no] != NULL && temperature[weather_no] != NULL )
+    if ( datestamp[weather_no] != NULL && description[weather_no] != NULL && temperature[weather_no] != NULL )
     {
         // APP_LOG( APP_LOG_LEVEL_DEBUG, "desc: %s", description[weather_no] );
-        int len = strlen( description[weather_no] ) + strlen( temperature[weather_no] ) + strlen( temp_units ) + 2;
+        int len = strlen( geo_str ) + strlen( datestamp[weather_no] ) + strlen( description[weather_no] ) + strlen( temperature[weather_no] ) + strlen( temp_units ) + 4;
         if ( weather_str != NULL )
         {
             free( weather_str );
         }
         weather_str = malloc( len );
-        strcpy( weather_str, description[weather_no] );
+        strcpy( weather_str, geo_str );
+        strcat( weather_str, "\n" );
+        strcat( weather_str, datestamp[weather_no] );
+        strcat( weather_str, "\n" );
+        strcat( weather_str, description[weather_no] );
         strcat( weather_str, "\n" );
         strcat( weather_str, temperature[weather_no] );
         strcat( weather_str, temp_units );
+        // APP_LOG( APP_LOG_LEVEL_DEBUG, "forecast: %s", weather_str );
         text_layer_set_text( weather_layer, weather_str );
     }
     if ( icon[weather_no] != NULL )
@@ -179,36 +182,50 @@ void in_received_handler( DictionaryIterator *iter, void *context )
     Tuple *lat_t = dict_find( iter, LAT );
     if ( lon_t && lat_t )
     {
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "lon: %s", lon_t->value->cstring );
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "lat: %s", lat_t->value->cstring );
+        int len = strlen( lat_t->value->cstring ) + strlen( lon_t->value->cstring ) + 2;
+        if ( geo_str != NULL )
+        {
+            free( geo_str );
+        }
+        geo_str = malloc( len );
+        strcpy( geo_str, lon_t->value->cstring );
+        strcat( geo_str, "," );
+        strcat( geo_str, lat_t->value->cstring );
+        // APP_LOG( APP_LOG_LEVEL_DEBUG, "geo: %s", geo_str );
     }
     else
     {
         Tuple *city_t = dict_find( iter, CITY );
         if ( city_t )
         {
-            APP_LOG( APP_LOG_LEVEL_DEBUG, "city: %s", city_t->value->cstring );
-            text_layer_set_text( geo_layer, city_t->value->cstring );
+            int len = strlen( city_t->value->cstring );
+            if ( geo_str != NULL )
+            {
+                free( geo_str );
+            }
+            geo_str = malloc( len ) + 1;
+            strcpy( geo_str, city_t->value->cstring );
+            // APP_LOG( APP_LOG_LEVEL_DEBUG, "geo: %s", geo_str );
         }
 
         Tuple *desc_t = dict_find( iter, DESCRIPTION );
         if ( desc_t )
         {
-            APP_LOG( APP_LOG_LEVEL_DEBUG, "desc %s", desc_t->value->cstring );
+            // APP_LOG( APP_LOG_LEVEL_DEBUG, "desc %s", desc_t->value->cstring );
             set_array( description, desc_t->value->cstring );
         }
         Tuple *datestamp_t = dict_find( iter, DATESTAMP );
         if ( datestamp_t )
         {
-            APP_LOG( APP_LOG_LEVEL_DEBUG, "datestamp: %s", datestamp_t->value->cstring );
+            // APP_LOG( APP_LOG_LEVEL_DEBUG, "datestamp: %s", datestamp_t->value->cstring );
             set_array( datestamp, datestamp_t->value->cstring );
         }
         Tuple *temp_t = dict_find( iter, TEMP );
         Tuple *temp_units_t = dict_find( iter, TEMP_UNITS );
         if ( temp_t && temp_units_t )
         {
-            APP_LOG( APP_LOG_LEVEL_DEBUG, "temp units: %s", temp_units_t->value->cstring );
-            APP_LOG( APP_LOG_LEVEL_DEBUG, "temp: %s", temp_t->value->cstring );
+            // APP_LOG( APP_LOG_LEVEL_DEBUG, "temp units: %s", temp_units_t->value->cstring );
+            // APP_LOG( APP_LOG_LEVEL_DEBUG, "temp: %s", temp_t->value->cstring );
             if ( strcmp( temp_units_t->value->cstring, "metric" ) == 0 )
             {
                 strcpy( temp_units, " C" );
@@ -222,7 +239,7 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         Tuple *icon_t = dict_find( iter, ICON );
         if ( icon_t )
         {
-            APP_LOG( APP_LOG_LEVEL_DEBUG, "icon %s", icon_t->value->cstring );
+            // APP_LOG( APP_LOG_LEVEL_DEBUG, "icon %s", icon_t->value->cstring );
             set_array( icon, icon_t->value->cstring );
         }
         weather_no = 0;
@@ -412,18 +429,9 @@ static void window_load( Window *window )
     text_layer_set_background_color( date_layer, GColorClear );
     text_layer_set_font( date_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( date_layer, GTextAlignmentLeft );
-    text_layer_set_text( date_layer, "" );
     text_layer_set_overflow_mode( notify_layer, GTextOverflowModeTrailingEllipsis );
 
     weather_icon_layer = bitmap_layer_create( GRect( 0, 70, 50, 50 ) );
-
-    datestamp_layer = text_layer_create( GRect( 0, 120, frame.size.w, 20 ) );
-    text_layer_set_text_color( datestamp_layer, GColorWhite );
-    text_layer_set_background_color( datestamp_layer, GColorClear );
-    text_layer_set_font( datestamp_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18_BOLD ) );
-    text_layer_set_text_alignment( datestamp_layer, GTextAlignmentLeft );
-    text_layer_set_text( datestamp_layer, "" );
-    text_layer_set_overflow_mode( datestamp_layer, GTextOverflowModeWordWrap );
 
     weather_layer = text_layer_create( GRect( 70, 60, frame.size.w-70, 120 ) );
     text_layer_set_text_color( weather_layer, GColorWhite );
@@ -432,24 +440,15 @@ static void window_load( Window *window )
     text_layer_set_text_alignment( weather_layer, GTextAlignmentLeft );
     text_layer_set_overflow_mode( weather_layer, GTextOverflowModeWordWrap );
 
-    geo_layer = text_layer_create( GRect( 70, 120, frame.size.w-70, 20 ) );
-    text_layer_set_text_color( geo_layer, GColorWhite );
-    text_layer_set_background_color( geo_layer, GColorClear );
-    text_layer_set_font( geo_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
-    text_layer_set_text_alignment( geo_layer, GTextAlignmentLeft );
-    text_layer_set_text( geo_layer, "" );
-    text_layer_set_overflow_mode( geo_layer, GTextOverflowModeFill );
-
-    battery_icon_layer = bitmap_layer_create( GRect( 0, 145, 16, 16 ) );
-
-    battery_layer = text_layer_create( GRect( 20, 140, 60, 20 ) );
+    battery_icon_layer = bitmap_layer_create( GRect( 0, 125, 16, 16 ) );
+    battery_layer = text_layer_create( GRect( 20, 120, 60, 20 ) );
     text_layer_set_text_color( battery_layer, GColorWhite );
     text_layer_set_background_color( battery_layer, GColorClear );
     text_layer_set_font( battery_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( battery_layer, GTextAlignmentLeft );
     text_layer_set_text( battery_layer, "100%" );
 
-    connection_layer = text_layer_create( GRect( 70, 140, 80, 20 ) );
+    connection_layer = text_layer_create( GRect( 0, 140, 80, 20 ) );
     text_layer_set_text_color( connection_layer, GColorWhite );
     text_layer_set_background_color( connection_layer, GColorClear );
     text_layer_set_font( connection_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
@@ -460,9 +459,7 @@ static void window_load( Window *window )
     layer_add_child( root_layer, text_layer_get_layer( am_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( date_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( secs_layer ) );
-    layer_add_child( root_layer, text_layer_get_layer( geo_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( weather_layer ) );
-    layer_add_child( root_layer, text_layer_get_layer( datestamp_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( connection_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( battery_layer ) );
     layer_add_child( root_layer, bitmap_layer_get_layer( weather_icon_layer ) );
