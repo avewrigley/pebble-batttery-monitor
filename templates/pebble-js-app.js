@@ -5,15 +5,17 @@ var icons = {
     [% END %]
 };
 
-// var url_root = "http://api.openweathermap.org/data/2.5/forecast?cnt=1&mode=json";
-var url_root = "http://api.openweathermap.org/data/2.5/forecast?mode=json";
+var weather_url_root = "http://api.openweathermap.org/data/2.5/forecast?mode=json";
+var position_url_root = "http://ave.wrigley.name:5001/?";
+var config_url_root = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?";
 var days = [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" ];
+
 function fetchWeather( latitude, longitude ) 
 {
     var response;
     var req = new XMLHttpRequest();
     var temp_units = localStorage.getItem( "temp_units" ) || "metric";
-    var url = url_root + "&lat=" + latitude + "&lon=" + longitude + "&units=" + temp_units;
+    var url = weather_url_root + "&lat=" + latitude + "&lon=" + longitude + "&units=" + temp_units;
     console.log( "GET " + url );
     req.open( 'GET', url, true );
     req.onload = function(e) {
@@ -71,7 +73,31 @@ function fetchWeather( latitude, longitude )
             } 
             else 
             {
-                console.log( "Error" );
+                console.log( "weather service error" );
+            }
+        }
+    }
+    req.send( null );
+}
+
+function logPosition( latitude, longitude ) 
+{
+    var req = new XMLHttpRequest();
+    var id = Pebble.getAccountToken();
+    var t = Math.round(+new Date()/1000);
+    var url = position_url_root + "&lat=" + latitude + "&lon=" + longitude + "&id=" + id + "&t=" + t;
+    console.log( "GET " + url );
+    req.open( 'GET', url, true );
+    req.onload = function(e) {
+        if ( req.readyState == 4 ) 
+        {
+            if ( req.status == 200 ) 
+            {
+                console.log( "position service success" );
+            } 
+            else 
+            {
+                console.log( "position service error" );
             }
         }
     }
@@ -98,6 +124,7 @@ function locationSuccess( pos )
         }
     );
     console.log( "Sent location message with transactionId=" + transactionId );
+    logPosition( coords.latitude, coords.longitude );
     fetchWeather( coords.latitude, coords.longitude );
 }
 
@@ -156,11 +183,13 @@ Pebble.addEventListener(
         var temp_units = localStorage.getItem( "temp_units" ) || "metric";
         var clock_format = localStorage.getItem( "clock_format" ) || "12h";
         var weather_interval = localStorage.getItem( "weather_interval" ) || "10";
+        var id = Pebble.getAccountToken();
         var url = 
-            "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?" + 
-                "temp_units=" + temp_units + 
-                "&clock_format=" + clock_format +
-                "&weather_interval=" + weather_interval
+            config_url_root + 
+            "temp_units=" + temp_units + 
+            "&clock_format=" + clock_format +
+            "&weather_interval=" + weather_interval +
+            "&id=" + id
         ;
         console.log( "GET: " + url );
         Pebble.openURL( url );
