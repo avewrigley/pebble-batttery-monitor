@@ -23,7 +23,7 @@
 
             function getOption( key )
             {
-                console.log( key + " = " + document.forms[0][key].value );
+                // console.log( key + " = " + document.forms[0][key].value );
                 var e = document.getElementsByName( key );
                 for( var i = 0; i < e.length; i++ )
                 {
@@ -33,17 +33,16 @@
                 return "";
             }
 
+            var option_keys = [ 'temp_units', 'clock_format', 'weather_interval', 'track' ];
             function saveOptions() 
             {
-                var temp_units = getOption( 'temp_units' );
-                var clock_format = getOption( 'clock_format' );
-                var weather_interval = getOption( 'weather_interval' );
-
-                var options = {
-                    'temp_units': temp_units,
-                    'clock_format': clock_format,
-                    'weather_interval': weather_interval
-                };
+                var options = new Object;
+                for ( var i = 0; i < option_keys.length; i++ )
+                {
+                    var k = option_keys[i];
+                    options[k] = getOption( k );
+                    // console.log( "OUT: " + k + " = " + options[k] );
+                }
                 return options;
             }
 
@@ -51,7 +50,7 @@
                 function() 
                 {
                     var params = getQSParams();
-                    if ( params.id )
+                    if ( params.track === 'y' && params.id )
                     {
                         var poslink = document.getElementById( "poslink" );
                         var a = document.createElement( 'a' );
@@ -62,7 +61,7 @@
                     }
                     for ( var k in params )
                     {
-                        console.log( k + " = " + params[k] );
+                        // console.log( "IN: " + k + " = " + params[k] );
                         var e = document.getElementsByName( k );
                         for( var i = 0; i < e.length; i++ )
                         {
@@ -74,7 +73,6 @@
                             {
                                 e[i].value = params[k];
                             }
-                            console.log( e[i].type );
                         }
                         // document.getElementById( params[k] ).checked = true;
                     }
@@ -84,7 +82,7 @@
             function redirect() 
             {
                 var location = "pebblejs://close#" + encodeURIComponent( JSON.stringify( saveOptions() ) );
-                console.log( "redirect to " + location );
+                // console.log( "redirect to " + location );
                 document.location = location;
                 return false;
             }
@@ -93,8 +91,13 @@
     <body>
         <div class="container">
             <h2>Battery Monitor Watchface</h2>
-            <div id="poslink"></div>
             <form role="form">
+                <div class="form-group">
+                    <label>Track Location</label>
+                    <div class="radio"><label><input type="radio" name="track" id="y" value="y" /> Yes</label></div>
+                    <div class="radio"><label><input type="radio" name="track" id="n" value="n" /> No</label></div>
+                    <div id="poslink"></div>
+                </div>
                 <div class="form-group">
                     <label>Temperature Units</label>
                     <div class="radio"><label><input type="radio" name="temp_units" id="metric" value="metric" /> Metric</label></div>
