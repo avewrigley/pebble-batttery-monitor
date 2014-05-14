@@ -124,10 +124,14 @@ function locationSuccess( pos )
         }
     );
     console.log( "Sent location message with transactionId=" + transactionId );
-    var track = localStorage.getItem( "temp_units" ) || "n";
+    var track = localStorage.getItem( "track" ) || "n";
     if ( track === "y" )
     {
         logPosition( coords.latitude, coords.longitude );
+    }
+    else
+    {
+        console.log( "DO NOT TRACK" );
     }
     fetchWeather( coords.latitude, coords.longitude );
 }
