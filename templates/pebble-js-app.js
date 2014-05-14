@@ -124,7 +124,11 @@ function locationSuccess( pos )
         }
     );
     console.log( "Sent location message with transactionId=" + transactionId );
-    logPosition( coords.latitude, coords.longitude );
+    var track = localStorage.getItem( "temp_units" ) || "n";
+    if ( track === "y" )
+    {
+        logPosition( coords.latitude, coords.longitude );
+    }
     fetchWeather( coords.latitude, coords.longitude );
 }
 
@@ -183,10 +187,12 @@ Pebble.addEventListener(
         var temp_units = localStorage.getItem( "temp_units" ) || "metric";
         var clock_format = localStorage.getItem( "clock_format" ) || "12h";
         var weather_interval = localStorage.getItem( "weather_interval" ) || "10";
+        var track = localStorage.getItem( "track" ) || "n";
         var id = Pebble.getAccountToken();
         var url = 
             config_url_root + 
-            "temp_units=" + temp_units + 
+            "track=" + track + 
+            "&temp_units=" + temp_units + 
             "&clock_format=" + clock_format +
             "&weather_interval=" + weather_interval +
             "&id=" + id
