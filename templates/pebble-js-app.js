@@ -6,8 +6,8 @@ var icons = {
 };
 
 var weather_url_root = "http://api.openweathermap.org/data/2.5/forecast?mode=json";
-var position_url_root = "http://ave.wrigley.name:5001/?";
-var config_url_root = "http://ave.wrigley.name/pebble/pebble-batttery-monitor/configurable.html?";
+var position_url_root = "http://www.batterymon.co.uk/position?";
+var config_url_root = "http://www.batterymon.co.uk/configurable.html?";
 var days = [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" ];
 
 function fetchWeather( latitude, longitude ) 
