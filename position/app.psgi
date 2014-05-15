@@ -55,6 +55,7 @@ sub {
     die "failed to connect to redis server" unless $redis;
     if ( $id )
     {
+        $log->debug( "id = $id" );
         my $id_hash = md5_hex( $id );
         $log->debug( "id_hash = $id_hash" );
         my $lon = $req->param( 'lon' );
