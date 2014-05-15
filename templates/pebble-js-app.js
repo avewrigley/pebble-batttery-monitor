@@ -192,10 +192,12 @@ Pebble.addEventListener(
         var clock_format = localStorage.getItem( "clock_format" ) || "12h";
         var weather_interval = localStorage.getItem( "weather_interval" ) || "10";
         var track = localStorage.getItem( "track" ) || "n";
+        var tap_to_update = localStorage.getItem( "tap_to_update" ) || "n";
         var id = Pebble.getAccountToken();
         var url = 
             config_url_root + 
             "track=" + track + 
+            "&tap_to_update=" + tap_to_update + 
             "&temp_units=" + temp_units + 
             "&clock_format=" + clock_format +
             "&weather_interval=" + weather_interval +
@@ -228,7 +230,16 @@ Pebble.addEventListener(
     {
         if ( e.payload.fetch_weather )
         {
-            getLocation();
+            var tap_to_update = localStorage.getItem( "tap_to_update" ) || "n";
+            if ( tap_to_update === 'y' )
+            {
+                console.log( "TAP for weather update" );
+                getLocation();
+            }
+            else
+            {
+                console.log( "TAP for weather update IGNORED because of preferences" );
+            }
         }
     }
 );
