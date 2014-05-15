@@ -120,16 +120,20 @@ void set_array( char **array, char *str )
     for ( ( i = 0, tok = strtok1( text, ';' ) ); tok != NULL && i < NO_FORECASTS; ( i++, tok = strtok1( NULL, ';' ) ) )
     {
         len = strlen( tok );
-        char *str = malloc( len+1 );
-        strcpy( str, tok );
-        if ( array[i] != NULL ) free( array[i] );
-        array[i] = str;
+        if ( array[i] != NULL ) 
+        {
+            free( array[i] );
+            array[i] = NULL;
+        }
+        array[i] = malloc( len+1 );
+        strcpy( array[i], tok );
     }
     if ( i == NO_FORECASTS+1 )
     {
         APP_LOG( APP_LOG_LEVEL_WARNING, "%d excedes no of forecasts(%d)", i, NO_FORECASTS );
     }
     free( text );
+    text = NULL;
 }
 
 static void cycle_weather()
@@ -146,6 +150,7 @@ static void cycle_weather()
         if ( weather_str != NULL )
         {
             free( weather_str );
+            weather_str = NULL;
         }
         weather_str = malloc( len );
         strcpy( weather_str, geo_str );
@@ -186,6 +191,7 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         if ( geo_str != NULL )
         {
             free( geo_str );
+            geo_str = NULL;
         }
         geo_str = malloc( len );
         strcpy( geo_str, lon_t->value->cstring );
@@ -202,6 +208,7 @@ void in_received_handler( DictionaryIterator *iter, void *context )
             if ( geo_str != NULL )
             {
                 free( geo_str );
+                geo_str = NULL;
             }
             geo_str = malloc( len ) + 1;
             strcpy( geo_str, city_t->value->cstring );
