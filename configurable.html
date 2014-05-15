@@ -9,6 +9,8 @@
         <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
 
         <script>
+            var option_keys = [ 'temp_units', 'tap_to_update', 'clock_format', 'weather_interval', 'track' ];
+
             function getQSParams()
             {
                 var qs = location.search.replace( '?', '' ).split( '&' );
@@ -33,7 +35,6 @@
                 return "";
             }
 
-            var option_keys = [ 'temp_units', 'clock_format', 'weather_interval', 'track' ];
             function saveOptions() 
             {
                 var options = new Object;
@@ -97,6 +98,11 @@
                     <div class="radio"><label><input type="radio" name="track" id="y" value="y" /> Yes</label></div>
                     <div class="radio"><label><input type="radio" name="track" id="n" value="n" /> No</label></div>
                     <div id="poslink"></div>
+                </div>
+                <div class="form-group">
+                    <label>Tap To Update Weather</label>
+                    <div class="radio"><label><input type="radio" name="tap_to_update" id="y" value="y" /> Yes</label></div>
+                    <div class="radio"><label><input type="radio" name="tap_to_update" id="n" value="n" /> No</label></div>
                 </div>
                 <div class="form-group">
                     <label>Temperature Units</label>
