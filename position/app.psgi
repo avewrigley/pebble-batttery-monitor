@@ -79,7 +79,6 @@ sub {
                 {
                     ( $lat, $lon, $t ) = split( ',', $value );
                     my $ts = strftime( "%c", localtime( $t ) );
-                    $log->debug( "$id_hash: GET $lat, $lon, $ts" );
                     my $marker = { lat => $lat, lon => $lon, t => $ts };
                     push( @markers, $marker );
                 }
