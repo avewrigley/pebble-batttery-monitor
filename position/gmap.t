@@ -16,6 +16,7 @@ var map;
 var directionsDisplay = new google.maps.DirectionsRenderer();
 var directionsService = new google.maps.DirectionsService();
 var bounds = new google.maps.LatLngBounds();
+var max_waypoints = 8;
 
 function calcRoute( start, end, wp ) 
 {
@@ -31,19 +32,23 @@ function calcRoute( start, end, wp )
         request = {
             origin: start,
             destination: end,
-            travelMode: google.maps.TravelMode.DRIVING
+            travelMode: google.maps.TravelMode.WALKING
         };
     }
     else
     {
+        if ( wp.length > max_waypoints )
+        {
+            console.log( "too many waypoints (" + wp.length + ")" );
+            wp = wp.slice( 0, max_waypoints-1 );
+        }
         request = {
             origin: start,
             destination: end,
             waypoints: wp,
-            travelMode: google.maps.TravelMode.DRIVING
+            travelMode: google.maps.TravelMode.WALKING
         };
     }
-    console.log( request );
     directionsService.route( 
         request, 
         function( result, status ) 
@@ -63,7 +68,7 @@ function initialize()
     [% FOREACH marker IN markers %]
         new google.maps.Marker( {
             position: new google.maps.LatLng( [% marker.lat %], [% marker.lon %] ),
-            title: "[% id %] @ [% marker.t %]"
+            title: "[% loop.count %]. [% id %] @ [% marker.t %]"
         } )[% UNLESS loop.last %],[% END %]
     [% END %]
     ];
