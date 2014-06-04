@@ -149,9 +149,13 @@ function getLocation()
 function configUpdate()
 {
     var clock_format = localStorage.getItem( "clock_format" ) || "12h";
+    var tap_to_update = localStorage.getItem( "tap_to_update" ) || "n";
+    console.log( "tap_to_update: " + tap_to_update );
+    console.log( "clock_format: " + clock_format );
     var transactionId = Pebble.sendAppMessage(
         {
             "clock_format": "" + clock_format,
+            "tap_to_update": "" + tap_to_update,
         },
         function( e ) {
             console.log( "Successfully delivered config message with transactionId=" + e.data.transactionId );

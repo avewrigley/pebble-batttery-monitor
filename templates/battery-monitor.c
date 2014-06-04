@@ -30,6 +30,7 @@ const uint32_t outbound_size = 256;
 #define BATTERY_LEVEL 1
 static int battery_level = 100;
 static char clock_format[] = "12h";
+static char tap_to_update[] = "n";
 
 enum GeoKey {
     LAT = 0x0,
@@ -41,7 +42,8 @@ enum GeoKey {
     CLOCK_FORMAT = 0x6,
     ICON = 0x7,
     FETCH_WEATHER = 0x8,
-    DATESTAMP = 0x9
+    DATESTAMP = 0x9,
+    TAP_TO_UPDATE = 0x10
 };
 
 static AppTimer *timer;
@@ -183,6 +185,12 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         strcpy( clock_format, clock_format_t->value->cstring );
         APP_LOG( APP_LOG_LEVEL_DEBUG, "clock format: %s", clock_format );
     }
+    Tuple *tap_to_update_t = dict_find( iter, TAP_TO_UPDATE );
+    if ( tap_to_update_t )
+    {
+        strcpy( tap_to_update, tap_to_update_t->value->cstring );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "tap_to_update: %s", tap_to_update );
+    }
     Tuple *lon_t = dict_find( iter, LON );
     Tuple *lat_t = dict_find( iter, LAT );
     if ( lon_t && lat_t )
@@ -323,7 +331,11 @@ static void send_weather_request()
 static void handle_tap( AccelAxisType axis, int32_t direction )
 {
     APP_LOG( APP_LOG_LEVEL_DEBUG, "tap" );
-    send_weather_request();
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "tap_to_update: %s", tap_to_update );
+    if ( strcmp( clock_format, "y" ) == 0 )
+    {
+        send_weather_request();
+    }
 }
 
 static void handle_day_tick( struct tm* tick_time, TimeUnits units_changed )
@@ -364,7 +376,7 @@ static void handle_second_tick( struct tm* tick_time, TimeUnits units_changed )
 {
     static char secs_text[] = ":00"; // Needs to be static because it's used by the system later.
 
-    strftime( secs_text, sizeof( secs_text ), ":%S", tick_time );
+    strftime( secs_text, sizeof( secs_text ), "%S", tick_time );
     text_layer_set_text( secs_layer, secs_text );
     if ( tick_time->tm_sec == 0 ) handle_minute_tick( tick_time, units_changed );
     if ( tick_time->tm_sec % cycle_secs == 0 )
@@ -385,7 +397,7 @@ static void init_time()
 
 static void handle_bluetooth( bool connected ) 
 {
-    text_layer_set_text( connection_layer, connected ? "connected" : "disconnected" );
+    text_layer_set_text( connection_layer, connected ? "connected" : "disconn." );
     if ( ! connected )
     {
         vibes_short_pulse();
@@ -409,7 +421,7 @@ static void window_load( Window *window )
 
     GFont custom_font_20 = fonts_load_custom_font( resource_get_handle( RESOURCE_ID_FONT_CONSOLA_MONO_20 ) );
 
-    secs_layer = text_layer_create( GRect( 105, 0, frame.size.w-100, 40 ) );
+    secs_layer = text_layer_create( GRect( 110, 0, frame.size.w-110, 40 ) );
     text_layer_set_text_color( secs_layer, GColorWhite );
     text_layer_set_background_color( secs_layer, GColorClear );
     text_layer_set_font( secs_layer, custom_font_20 );
@@ -460,7 +472,7 @@ static void window_load( Window *window )
     text_layer_set_background_color( connection_layer, GColorClear );
     text_layer_set_font( connection_layer, fonts_get_system_font( FONT_KEY_GOTHIC_18 ) );
     text_layer_set_text_alignment( connection_layer, GTextAlignmentLeft );
-    text_layer_set_text( connection_layer, "disconnected" );
+    text_layer_set_text( connection_layer, "disconn." );
 
     layer_add_child( root_layer, text_layer_get_layer( time_layer ) );
     layer_add_child( root_layer, text_layer_get_layer( am_layer ) );
