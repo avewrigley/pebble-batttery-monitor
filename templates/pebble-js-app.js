@@ -1,4 +1,3 @@
-
 var icons = {
     [% FOREACH image IN images %]
     "[% image.name %]": [% loop.index %][% UNLESS loop.last %],[% END %]
@@ -228,6 +227,7 @@ Pebble.addEventListener(
         configUpdate();
     }
 );
+
 Pebble.addEventListener(
     "appmessage",
     function(e) 
