@@ -57,8 +57,8 @@ char *datestamp[NO_FORECASTS];
 char *temp_units = " C";
 int weather_no = 0;
 
-char *weather_str;
-char *geo_str;
+char weather_str[256];
+char geo_str[256];
 
 static void notify_timer_callback( void *data ) 
 {
@@ -149,12 +149,6 @@ static void cycle_weather()
     {
         // APP_LOG( APP_LOG_LEVEL_DEBUG, "desc: %s", description[weather_no] );
         int len = strlen( geo_str ) + strlen( datestamp[weather_no] ) + strlen( description[weather_no] ) + strlen( temperature[weather_no] ) + strlen( temp_units ) + 4;
-        if ( weather_str != NULL )
-        {
-            free( weather_str );
-            weather_str = NULL;
-        }
-        weather_str = malloc( len );
         strcpy( weather_str, geo_str );
         strcat( weather_str, "\n" );
         strcat( weather_str, datestamp[weather_no] );
@@ -177,17 +171,79 @@ static void cycle_weather()
     if ( weather_no == NO_FORECASTS ) weather_no = 0;
 }
 
+static void handle_day_tick( struct tm* tick_time, TimeUnits units_changed )
+{
+    static char date_text[] = "Mon 31 Dec"; // Needs to be static because it's used by the system later.
+
+    strftime( date_text, sizeof( date_text ), "%a %d %b", tick_time );
+    text_layer_set_text( date_layer, date_text );
+}
+
+static void handle_hour_tick( struct tm* tick_time, TimeUnits units_changed )
+{
+    if ( tick_time->tm_hour == 0 ) handle_day_tick( tick_time, units_changed );
+}
+
+static void handle_minute_tick( struct tm* tick_time, TimeUnits units_changed ) 
+{
+    static char time_text[] = "00:00"; // Needs to be static because it's used by the system later.
+    static char am_text[] = "  "; // Needs to be static because it's used by the system later.
+
+    if ( strcmp( clock_format, "12h" ) == 0 )
+    {
+        strftime( time_text, sizeof( time_text ), "%I:%M", tick_time );
+        strftime( am_text, sizeof( am_text ), "%p", tick_time );
+        for( char *p = am_text; *p; ++p ) *p = *p >0x40 && *p < 0x5b ? *p | 0x60 : *p;
+    }
+    else
+    {
+        strftime( time_text, sizeof( time_text ), "%H:%M", tick_time );
+        strcpy( am_text, "  " );
+    }
+    text_layer_set_text( time_layer, time_text );
+    text_layer_set_text( am_layer, am_text );
+    if ( tick_time->tm_min == 0 ) handle_hour_tick( tick_time, units_changed );
+}
+
+static void handle_second_tick( struct tm* tick_time, TimeUnits units_changed ) 
+{
+    static char secs_text[] = ":00"; // Needs to be static because it's used by the system later.
+
+    strftime( secs_text, sizeof( secs_text ), "%S", tick_time );
+    text_layer_set_text( secs_layer, secs_text );
+    if ( tick_time->tm_sec == 0 ) handle_minute_tick( tick_time, units_changed );
+    if ( tick_time->tm_sec % cycle_secs == 0 )
+    {
+        cycle_weather();
+    }
+}
+
+static void init_time()
+{
+    time_t t = time( NULL );
+    struct tm *lt = localtime( &t );
+    handle_second_tick( lt, SECOND_UNIT );
+    handle_minute_tick( lt, SECOND_UNIT );
+    handle_hour_tick( lt, SECOND_UNIT );
+    handle_day_tick( lt, SECOND_UNIT );
+}
+
 void in_received_handler( DictionaryIterator *iter, void *context ) 
 {
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "got message" );
     Tuple *clock_format_t = dict_find( iter, CLOCK_FORMAT );
     if ( clock_format_t )
     {
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "clock format: %s", clock_format_t->value->cstring );
         strcpy( clock_format, clock_format_t->value->cstring );
         APP_LOG( APP_LOG_LEVEL_DEBUG, "clock format: %s", clock_format );
+        init_time();
     }
     Tuple *tap_to_update_t = dict_find( iter, TAP_TO_UPDATE );
     if ( tap_to_update_t )
     {
+        strcpy( tap_to_update, tap_to_update_t->value->cstring );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "tap_to_update: %s", tap_to_update_t->value->cstring );
         strcpy( tap_to_update, tap_to_update_t->value->cstring );
         APP_LOG( APP_LOG_LEVEL_DEBUG, "tap_to_update: %s", tap_to_update );
     }
@@ -196,12 +252,6 @@ void in_received_handler( DictionaryIterator *iter, void *context )
     if ( lon_t && lat_t )
     {
         int len = strlen( lat_t->value->cstring ) + strlen( lon_t->value->cstring ) + 2;
-        if ( geo_str != NULL )
-        {
-            free( geo_str );
-            geo_str = NULL;
-        }
-        geo_str = malloc( len );
         strcpy( geo_str, lon_t->value->cstring );
         strcat( geo_str, "," );
         strcat( geo_str, lat_t->value->cstring );
@@ -213,12 +263,6 @@ void in_received_handler( DictionaryIterator *iter, void *context )
         if ( city_t )
         {
             int len = strlen( city_t->value->cstring );
-            if ( geo_str != NULL )
-            {
-                free( geo_str );
-                geo_str = NULL;
-            }
-            geo_str = malloc( len ) + 1;
             strcpy( geo_str, city_t->value->cstring );
             // APP_LOG( APP_LOG_LEVEL_DEBUG, "geo: %s", geo_str );
         }
@@ -338,63 +382,6 @@ static void handle_tap( AccelAxisType axis, int32_t direction )
     }
 }
 
-static void handle_day_tick( struct tm* tick_time, TimeUnits units_changed )
-{
-    static char date_text[] = "Mon 31 Dec"; // Needs to be static because it's used by the system later.
-
-    strftime( date_text, sizeof( date_text ), "%a %d %b", tick_time );
-    text_layer_set_text( date_layer, date_text );
-}
-
-static void handle_hour_tick( struct tm* tick_time, TimeUnits units_changed )
-{
-    if ( tick_time->tm_hour == 0 ) handle_day_tick( tick_time, units_changed );
-}
-
-static void handle_minute_tick( struct tm* tick_time, TimeUnits units_changed ) 
-{
-    static char time_text[] = "00:00"; // Needs to be static because it's used by the system later.
-    static char am_text[] = "  "; // Needs to be static because it's used by the system later.
-
-    if ( strcmp( clock_format, "12h" ) == 0 )
-    {
-        strftime( time_text, sizeof( time_text ), "%I:%M", tick_time );
-        strftime( am_text, sizeof( am_text ), "%p", tick_time );
-        for( char *p = am_text; *p; ++p ) *p = *p >0x40 && *p < 0x5b ? *p | 0x60 : *p;
-    }
-    else
-    {
-        strftime( time_text, sizeof( time_text ), "%H:%M", tick_time );
-        strcpy( am_text, "  " );
-    }
-    text_layer_set_text( time_layer, time_text );
-    text_layer_set_text( am_layer, am_text );
-    if ( tick_time->tm_min == 0 ) handle_hour_tick( tick_time, units_changed );
-}
-
-static void handle_second_tick( struct tm* tick_time, TimeUnits units_changed ) 
-{
-    static char secs_text[] = ":00"; // Needs to be static because it's used by the system later.
-
-    strftime( secs_text, sizeof( secs_text ), "%S", tick_time );
-    text_layer_set_text( secs_layer, secs_text );
-    if ( tick_time->tm_sec == 0 ) handle_minute_tick( tick_time, units_changed );
-    if ( tick_time->tm_sec % cycle_secs == 0 )
-    {
-        cycle_weather();
-    }
-}
-
-static void init_time()
-{
-    time_t t = time( NULL );
-    struct tm *lt = localtime( &t );
-    handle_second_tick( lt, SECOND_UNIT );
-    handle_minute_tick( lt, SECOND_UNIT );
-    handle_hour_tick( lt, SECOND_UNIT );
-    handle_day_tick( lt, SECOND_UNIT );
-}
-
 static void handle_bluetooth( bool connected ) 
 {
     text_layer_set_text( connection_layer, connected ? "connected" : "disconn." );
@@ -407,6 +394,7 @@ static void handle_bluetooth( bool connected )
 
 static void window_load( Window *window ) 
 {
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "window load" );
     root_layer = window_get_root_layer( window );
     frame = layer_get_frame( root_layer );
 
@@ -530,6 +518,7 @@ static void click_config_provider(void *context) {
 
 static void do_init( void ) 
 {
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "init" );
     [% FOREACH image IN images %]
     weather_bitmap[[% loop.index %]] = gbitmap_create_with_resource( RESOURCE_ID_[% image.name %] );
     [% END %]
