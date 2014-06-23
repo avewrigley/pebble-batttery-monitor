@@ -39,7 +39,8 @@ function fetchWeather( latitude, longitude )
                         description.push( weather.description );
                         var icon = weather.icon;
                         icon_no.push( icons[icon] );
-                        temp.push( forecast.main.temp.toFixed(1) );
+                        var symbol = temp_units === "metric" ? " C" : " F";
+                        temp.push( "" + forecast.main.temp.toFixed(1) + symbol );
                         var dt = forecast.dt;
                         var date = new Date( dt * 1000 );
                         var h = date.getHours().toString();
@@ -54,7 +55,6 @@ function fetchWeather( latitude, longitude )
                     var transactionId = Pebble.sendAppMessage(
                         {
                             "temp": "" + temp.join( ";" ),
-                            "temp_units": temp_units,
                             "city": "" + city,
                             "description": "" + description.join( ";" ),
                             "icon": icon_no.join( ";" ),
@@ -110,19 +110,6 @@ function locationSuccess( pos )
     var lon = "" + coords.longitude.toFixed( 3 );
     console.log( "latitude: " + lat );
     console.log( "longitude: " + lon );
-    var transactionId = Pebble.sendAppMessage(
-        {
-            "lat": lat,
-            "lon": lon,
-        },
-        function( e ) {
-            console.log( "Successfully delivered location message with transactionId=" + e.data.transactionId );
-        },
-        function( e ) {
-            console.log( "Unable to deliver location message with transactionId=" + e.data.transactionId + " Error is: " + e.error.message );
-        }
-    );
-    console.log( "Sent location message with transactionId=" + transactionId );
     var track = localStorage.getItem( "track" ) || "n";
     if ( track === "y" )
     {
@@ -180,6 +167,7 @@ Pebble.addEventListener(
     "ready",
     function(e) 
     {
+        console.log( "ready" );
         setWeatherCallback();
         getLocation();
         configUpdate();
