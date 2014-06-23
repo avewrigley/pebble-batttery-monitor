@@ -32,18 +32,15 @@ static int battery_level = 100;
 static char clock_format[] = "12h";
 static char tap_to_update[] = "n";
 
-enum GeoKey {
-    LAT = 0x0,
-    LON = 0x1,
+enum MessageKey {
     TEMP = 0x2,
     CITY = 0x3,
     DESCRIPTION = 0x4,
-    TEMP_UNITS = 0x5,
+    TAP_TO_UPDATE = 0x5,
     CLOCK_FORMAT = 0x6,
     ICON = 0x7,
     FETCH_WEATHER = 0x8,
-    DATESTAMP = 0x9,
-    TAP_TO_UPDATE = 0x10
+    DATESTAMP = 0x9
 };
 
 static AppTimer *timer;
@@ -54,7 +51,6 @@ char *description[NO_FORECASTS];
 char *temperature[NO_FORECASTS];
 char *icon[NO_FORECASTS];
 char *datestamp[NO_FORECASTS];
-char *temp_units = " C";
 int weather_no = 0;
 
 char weather_str[256];
@@ -148,7 +144,6 @@ static void cycle_weather()
     if ( datestamp[weather_no] != NULL && description[weather_no] != NULL && temperature[weather_no] != NULL )
     {
         // APP_LOG( APP_LOG_LEVEL_DEBUG, "desc: %s", description[weather_no] );
-        int len = strlen( geo_str ) + strlen( datestamp[weather_no] ) + strlen( description[weather_no] ) + strlen( temperature[weather_no] ) + strlen( temp_units ) + 4;
         strcpy( weather_str, geo_str );
         strcat( weather_str, "\n" );
         strcat( weather_str, datestamp[weather_no] );
@@ -156,7 +151,6 @@ static void cycle_weather()
         strcat( weather_str, description[weather_no] );
         strcat( weather_str, "\n" );
         strcat( weather_str, temperature[weather_no] );
-        strcat( weather_str, temp_units );
         // APP_LOG( APP_LOG_LEVEL_DEBUG, "forecast: %s", weather_str );
         text_layer_set_text( weather_layer, weather_str );
     }
@@ -234,7 +228,6 @@ void in_received_handler( DictionaryIterator *iter, void *context )
     Tuple *clock_format_t = dict_find( iter, CLOCK_FORMAT );
     if ( clock_format_t )
     {
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "clock format: %s", clock_format_t->value->cstring );
         strcpy( clock_format, clock_format_t->value->cstring );
         APP_LOG( APP_LOG_LEVEL_DEBUG, "clock format: %s", clock_format );
         init_time();
@@ -243,67 +236,41 @@ void in_received_handler( DictionaryIterator *iter, void *context )
     if ( tap_to_update_t )
     {
         strcpy( tap_to_update, tap_to_update_t->value->cstring );
-        APP_LOG( APP_LOG_LEVEL_DEBUG, "tap_to_update: %s", tap_to_update_t->value->cstring );
-        strcpy( tap_to_update, tap_to_update_t->value->cstring );
         APP_LOG( APP_LOG_LEVEL_DEBUG, "tap_to_update: %s", tap_to_update );
     }
-    Tuple *lon_t = dict_find( iter, LON );
-    Tuple *lat_t = dict_find( iter, LAT );
-    if ( lon_t && lat_t )
+    Tuple *city_t = dict_find( iter, CITY );
+    if ( city_t )
     {
-        int len = strlen( lat_t->value->cstring ) + strlen( lon_t->value->cstring ) + 2;
-        strcpy( geo_str, lon_t->value->cstring );
-        strcat( geo_str, "," );
-        strcat( geo_str, lat_t->value->cstring );
-        // APP_LOG( APP_LOG_LEVEL_DEBUG, "geo: %s", geo_str );
+        strcpy( geo_str, city_t->value->cstring );
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "geo: %s", geo_str );
     }
-    else
-    {
-        Tuple *city_t = dict_find( iter, CITY );
-        if ( city_t )
-        {
-            int len = strlen( city_t->value->cstring );
-            strcpy( geo_str, city_t->value->cstring );
-            // APP_LOG( APP_LOG_LEVEL_DEBUG, "geo: %s", geo_str );
-        }
 
-        Tuple *desc_t = dict_find( iter, DESCRIPTION );
-        if ( desc_t )
-        {
-            // APP_LOG( APP_LOG_LEVEL_DEBUG, "desc %s", desc_t->value->cstring );
-            set_array( description, desc_t->value->cstring );
-        }
-        Tuple *datestamp_t = dict_find( iter, DATESTAMP );
-        if ( datestamp_t )
-        {
-            // APP_LOG( APP_LOG_LEVEL_DEBUG, "datestamp: %s", datestamp_t->value->cstring );
-            set_array( datestamp, datestamp_t->value->cstring );
-        }
-        Tuple *temp_t = dict_find( iter, TEMP );
-        Tuple *temp_units_t = dict_find( iter, TEMP_UNITS );
-        if ( temp_t && temp_units_t )
-        {
-            // APP_LOG( APP_LOG_LEVEL_DEBUG, "temp units: %s", temp_units_t->value->cstring );
-            // APP_LOG( APP_LOG_LEVEL_DEBUG, "temp: %s", temp_t->value->cstring );
-            if ( strcmp( temp_units_t->value->cstring, "metric" ) == 0 )
-            {
-                strcpy( temp_units, " C" );
-            }
-            else
-            {
-                strcpy( temp_units, " F" );
-            }
-            set_array( temperature, temp_t->value->cstring );
-        }
-        Tuple *icon_t = dict_find( iter, ICON );
-        if ( icon_t )
-        {
-            // APP_LOG( APP_LOG_LEVEL_DEBUG, "icon %s", icon_t->value->cstring );
-            set_array( icon, icon_t->value->cstring );
-        }
-        weather_no = 0;
-        cycle_weather();
+    Tuple *desc_t = dict_find( iter, DESCRIPTION );
+    if ( desc_t )
+    {
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "desc %s", desc_t->value->cstring );
+        set_array( description, desc_t->value->cstring );
     }
+    Tuple *datestamp_t = dict_find( iter, DATESTAMP );
+    if ( datestamp_t )
+    {
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "datestamp: %s", datestamp_t->value->cstring );
+        set_array( datestamp, datestamp_t->value->cstring );
+    }
+    Tuple *temp_t = dict_find( iter, TEMP );
+    if ( temp_t )
+    {
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "temp: %s", temp_t->value->cstring );
+        set_array( temperature, temp_t->value->cstring );
+    }
+    Tuple *icon_t = dict_find( iter, ICON );
+    if ( icon_t )
+    {
+        APP_LOG( APP_LOG_LEVEL_DEBUG, "icon %s", icon_t->value->cstring );
+        set_array( icon, icon_t->value->cstring );
+    }
+    weather_no = 0;
+    cycle_weather();
 }
 
 void in_dropped_handler( AppMessageResult reason, void *context ) 
@@ -376,7 +343,7 @@ static void handle_tap( AccelAxisType axis, int32_t direction )
 {
     APP_LOG( APP_LOG_LEVEL_DEBUG, "tap" );
     APP_LOG( APP_LOG_LEVEL_DEBUG, "tap_to_update: %s", tap_to_update );
-    if ( strcmp( clock_format, "y" ) == 0 )
+    if ( strcmp( tap_to_update, "y" ) == 0 )
     {
         send_weather_request();
     }
@@ -481,6 +448,12 @@ static void window_load( Window *window )
     bluetooth_connection_service_subscribe( &handle_bluetooth );
 
     accel_tap_service_subscribe( &handle_tap );
+}
+
+
+static void init_message_handlers()
+{
+    APP_LOG( APP_LOG_LEVEL_DEBUG, "init message handlers" );
     app_message_register_inbox_received( in_received_handler );
     app_message_register_inbox_dropped( in_dropped_handler );
     app_message_register_outbox_sent( out_sent_handler );
@@ -522,6 +495,7 @@ static void do_init( void )
     [% FOREACH image IN images %]
     weather_bitmap[[% loop.index %]] = gbitmap_create_with_resource( RESOURCE_ID_[% image.name %] );
     [% END %]
+    init_message_handlers();
     window = window_create();
     window_set_background_color( window, GColorBlack );
     window_set_fullscreen( window, true );
