@@ -3,23 +3,20 @@
     "shortName": "battery-monitor",
     "longName": "battery-monitor",
     "companyName": "Ave Wrigley",
-    "versionCode": 30,
-    "versionLabel": "1.0.30",
+    "versionCode": 31,
+    "versionLabel": "1.0.31",
     "watchapp": {
         "watchface": true
     },
     "appKeys": {
-        "lat": 0,
-        "lon": 1,
         "temp": 2,
         "city": 3,
         "description": 4,
-        "temp_units": 5,
+        "tap_to_update": 5,
         "clock_format": 6,
         "icon": 7,
         "fetch_weather": 8,
-        "datestamp": 9,
-        "tap_to_update": 10
+        "datestamp": 9
     },    
     "capabilities": [ "location", "configurable" ],
     "resources": {
